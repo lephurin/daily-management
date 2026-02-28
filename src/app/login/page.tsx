@@ -2,6 +2,7 @@
 
 import { signIn } from "next-auth/react";
 import { useState } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -27,6 +28,15 @@ export default function LoginPage() {
     <main className="flex min-h-screen items-center justify-center bg-linear-to-br from-slate-50 to-slate-100 p-4 dark:from-slate-950 dark:to-slate-900">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center">
+          <div className="mb-2 flex justify-center">
+            <Image
+              src="/dm.png"
+              alt="DM Logo"
+              width={48}
+              height={48}
+              priority
+            />
+          </div>
           <CardTitle className="text-3xl font-bold tracking-tight">
             Daily Tracking Dashboard
           </CardTitle>

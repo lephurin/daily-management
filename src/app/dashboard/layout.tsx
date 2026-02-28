@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
+import Image from "next/image";
 
 const navItems = [
   {
@@ -134,9 +135,12 @@ export default function DashboardLayout({
     <div className="flex min-h-screen bg-background">
       {/* Desktop Sidebar */}
       <aside className="hidden w-64 shrink-0 border-r bg-card lg:flex lg:flex-col lg:p-4">
-        <div className="mb-8">
-          <h2 className="text-lg font-bold tracking-tight">Daily Tracking</h2>
-          <p className="text-xs text-muted-foreground">Dashboard</p>
+        <div className="mb-8 flex items-center gap-3">
+          <Image src="/dm.png" alt="DM Logo" width={32} height={32} />
+          <div>
+            <h2 className="text-lg font-bold tracking-tight">Daily Tracking</h2>
+            <p className="text-xs text-muted-foreground">Dashboard</p>
+          </div>
         </div>
         <SidebarNav />
         <div className="mt-auto pt-4 border-t">
@@ -173,11 +177,14 @@ export default function DashboardLayout({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-6 flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-bold tracking-tight">
-                  Daily Tracking
-                </h2>
-                <p className="text-xs text-muted-foreground">Dashboard</p>
+              <div className="flex items-center gap-2">
+                <Image src="/dm.png" alt="DM Logo" width={28} height={28} />
+                <div>
+                  <h2 className="text-lg font-bold tracking-tight">
+                    Daily Tracking
+                  </h2>
+                  <p className="text-xs text-muted-foreground">Dashboard</p>
+                </div>
               </div>
               <button
                 onClick={() => setMobileMenuOpen(false)}
