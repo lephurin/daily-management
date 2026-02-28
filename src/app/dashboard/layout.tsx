@@ -4,6 +4,7 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import Image from "next/image";
+import { Footer } from "@/components/footer";
 
 const navItems = [
   {
@@ -161,7 +162,7 @@ export default function DashboardLayout({
                 d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
               />
             </svg>
-            ออกจากระบบ
+            Log Out
           </button>
         </div>
       </aside>
@@ -224,7 +225,7 @@ export default function DashboardLayout({
                     d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
                   />
                 </svg>
-                ออกจากระบบ
+                Log Out
               </button>
             </div>
           </aside>
@@ -232,7 +233,7 @@ export default function DashboardLayout({
       )}
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto">
+      <div className="flex flex-1 flex-col overflow-auto">
         <header className="sticky top-0 z-40 border-b bg-background/95 px-4 py-4 backdrop-blur supports-backdrop-filter:bg-background/60 sm:px-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -264,8 +265,9 @@ export default function DashboardLayout({
           </div>
         </header>
 
-        <div className="p-4 sm:p-6">{children}</div>
-      </main>
+        <main className="flex-1 p-4 sm:p-6">{children}</main>
+        <Footer />
+      </div>
     </div>
   );
 }

@@ -18,6 +18,9 @@ export const metadata: Metadata = {
   title: "Daily Management",
   description:
     "Enterprise-grade Productivity Platform integrating Jira, Calendar, Daily Notes, and AI Reporting.",
+  verification: {
+    google: "1XqyEztM1WguQZw4lZlOYZzyh18sfPPlVz8z2oR2BVE",
+  },
 };
 
 export default function RootLayout({
