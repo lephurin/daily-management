@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     tools: {
       fetchJiraTasks: {
         description: "ดึงข้อมูล Jira Tasks จาก Active Sprint ของผู้ใช้",
-        parameters: z.object({
+        inputSchema: z.object({
           boardId: z.string().optional().describe("Jira Board ID (optional)"),
         }),
         execute: async () => {
@@ -46,7 +46,7 @@ export async function POST(req: Request) {
       },
       fetchCalendar: {
         description: "ดึงข้อมูล Calendar Events ของวันนี้",
-        parameters: z.object({
+        inputSchema: z.object({
           date: z.string().optional().describe("Date in YYYY-MM-DD format"),
         }),
         execute: async () => {
@@ -70,7 +70,7 @@ export async function POST(req: Request) {
       },
       fetchNotes: {
         description: "ดึงข้อมูล Daily Notes ของวันที่ระบุ",
-        parameters: z.object({
+        inputSchema: z.object({
           date: z.string().optional().describe("Date in YYYY-MM-DD format"),
         }),
         execute: async () => {
