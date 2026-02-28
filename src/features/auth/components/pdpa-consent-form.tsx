@@ -49,7 +49,7 @@ export function PdpaConsentForm() {
         {/* Privacy Policy Content */}
         <div className="max-h-80 overflow-y-auto rounded-lg border bg-muted/50 p-6 text-sm leading-relaxed">
           <h3 className="mb-4 text-base font-semibold">
-            Privacy Policy – Daily Tracking Dashboard
+            Privacy Policy – Daily Management
           </h3>
 
           <section className="mb-4">

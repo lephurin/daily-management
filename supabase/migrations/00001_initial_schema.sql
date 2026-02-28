@@ -1,5 +1,5 @@
 -- ============================================================
--- Supabase Declarative Schema: Daily Tracking Dashboard
+-- Supabase Declarative Schema: Daily Management
 -- All tables use UUID PKs, enable RLS, enforce FK constraints
 -- ============================================================
 

@@ -1,4 +1,4 @@
-# Daily Tracking Dashboard
+# Daily Management
 
 ## Enterprise System Specification (v1.0)
 
@@ -6,7 +6,7 @@
 
 # 1. Executive Summary
 
-Daily Tracking Dashboard คือ Enterprise-grade Productivity Platform
+Daily Management คือ Enterprise-grade Productivity Platform
 ที่รวม Jira, Calendar, Daily Notes และ AI Reporting
 ไว้ภายในระบบเดียว
 

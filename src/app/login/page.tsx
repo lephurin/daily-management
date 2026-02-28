@@ -38,7 +38,7 @@ export default function LoginPage() {
             />
           </div>
           <CardTitle className="text-3xl font-bold tracking-tight">
-            Daily Tracking Dashboard
+            Daily Management
           </CardTitle>
           <CardDescription className="text-base">
             Enterprise-grade Productivity Platform

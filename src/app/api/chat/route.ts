@@ -9,7 +9,7 @@ export async function POST(req: Request) {
 
   const result = streamText({
     model: openai("gpt-4o-mini"),
-    system: `คุณคือ AI Assistant ของ Daily Tracking Dashboard
+    system: `คุณคือ AI Assistant ของ Daily Management
 คุณช่วยสรุปงาน, ตอบคำถามเกี่ยวกับ Jira Tasks, Calendar Events, และ Daily Notes
 ตอบเป็นภาษาไทยเป็นหลัก แต่สามารถตอบภาษาอังกฤษได้ตามความเหมาะสม
 ให้ข้อมูลที่ชัดเจน กระชับ และเป็นประโยชน์`,

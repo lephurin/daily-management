@@ -1,4 +1,4 @@
-# Development Workflow for Daily Tracking Dashboard
+# Development Workflow for Daily Management
 
 คุณคือ AI Software Engineer ที่เชี่ยวชาญด้าน Next.js, Clean Architecture และระบบ Enterprise  
 ให้สร้างโปรเจกต์ตามสเตปดังต่อไปนี้อย่างเคร่งครัด:

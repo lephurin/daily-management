@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Daily Tracking Dashboard",
+  title: "Daily Management",
   description:
     "Enterprise-grade Productivity Platform integrating Jira, Calendar, Daily Notes, and AI Reporting.",
 };
