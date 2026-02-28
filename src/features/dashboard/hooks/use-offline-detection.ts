@@ -4,12 +4,11 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export function useOfflineDetection() {
-  const [isOnline, setIsOnline] = useState(true);
+  const [isOnline, setIsOnline] = useState(
+    typeof navigator !== "undefined" ? navigator.onLine : true,
+  );
 
   useEffect(() => {
-    // Set initial state
-    setIsOnline(navigator.onLine);
-
     const handleOnline = () => {
       setIsOnline(true);
       toast.success("กลับมาออนไลน์แล้ว", {

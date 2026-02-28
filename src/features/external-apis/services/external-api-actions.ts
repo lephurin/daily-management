@@ -153,6 +153,7 @@ export async function fetchGoogleCalendarEvents(): Promise<CalendarEvent[]> {
           location?: string;
           description?: string;
           organizer?: { email: string };
+          htmlLink?: string;
         }) => ({
           id: event.id,
           title: event.summary || "(ไม่มีชื่อ)",
@@ -161,6 +162,7 @@ export async function fetchGoogleCalendarEvents(): Promise<CalendarEvent[]> {
           location: event.location,
           description: event.description,
           organizer: event.organizer?.email,
+          htmlLink: event.htmlLink,
         }),
       ) || []
     );

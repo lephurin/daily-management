@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import Image from "next/image";
 import { Footer } from "@/components/footer";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const navItems = [
   {
@@ -60,6 +61,25 @@ const navItems = [
           strokeLinejoin="round"
           strokeWidth={2}
           d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+        />
+      </svg>
+    ),
+  },
+  {
+    href: "/dashboard/chat",
+    label: "AI Chat",
+    icon: (
+      <svg
+        className="h-4 w-4"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
         />
       </svg>
     ),
@@ -127,6 +147,7 @@ export default function DashboardLayout({
   const pageTitle = (() => {
     if (pathname === "/dashboard") return "Dashboard";
     if (pathname.startsWith("/dashboard/notes")) return "Daily Notes";
+    if (pathname.startsWith("/dashboard/chat")) return "AI Chat";
     if (pathname.startsWith("/dashboard/profile")) return "Profile";
     if (pathname.startsWith("/dashboard/members")) return "Members";
     return "Dashboard";
@@ -260,7 +281,7 @@ export default function DashboardLayout({
               <h1 className="text-xl font-semibold">{pageTitle}</h1>
             </div>
             <div className="flex items-center gap-2">
-              {/* Future: user avatar, settings, logout */}
+              <ThemeToggle />
             </div>
           </div>
         </header>

@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface ChatMessage {
   id: string;
@@ -116,7 +117,12 @@ export function AiChatPanel() {
         {/* Messages */}
         <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto pr-2">
           {messages.length === 0 && (
-            <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3 }}
+              className="flex h-full flex-col items-center justify-center gap-3 text-center"
+            >
               <div className="rounded-full bg-purple-100 p-4 dark:bg-purple-900/30">
                 <svg
                   className="h-8 w-8 text-purple-600 dark:text-purple-400"
@@ -136,35 +142,46 @@ export function AiChatPanel() {
                 ถามอะไรก็ได้! เช่น &ldquo;สรุปงานวันนี้&rdquo; หรือ
                 &ldquo;มีนัดอะไรบ้าง&rdquo;
               </p>
-            </div>
+            </motion.div>
           )}
 
-          {messages.map((m) => (
-            <div
-              key={m.id}
-              className={`flex ${
-                m.role === "user" ? "justify-end" : "justify-start"
-              }`}
-            >
-              <div
-                className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm ${
-                  m.role === "user"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
+          <AnimatePresence initial={false}>
+            {messages.map((m) => (
+              <motion.div
+                key={m.id}
+                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.2 }}
+                className={`flex ${
+                  m.role === "user" ? "justify-end" : "justify-start"
                 }`}
               >
-                <div className="whitespace-pre-wrap">{m.content}</div>
-              </div>
-            </div>
-          ))}
+                <div
+                  className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm ${
+                    m.role === "user"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted"
+                  }`}
+                >
+                  <div className="whitespace-pre-wrap">{m.content}</div>
+                </div>
+              </motion.div>
+            ))}
 
-          {isLoading && messages[messages.length - 1]?.content === "" && (
-            <div className="flex justify-start">
-              <div className="rounded-2xl bg-muted px-4 py-2 text-sm">
-                <span className="animate-pulse">กำลังคิด...</span>
-              </div>
-            </div>
-          )}
+            {isLoading && messages[messages.length - 1]?.content === "" && (
+              <motion.div
+                key="typing-indicator"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="flex justify-start"
+              >
+                <div className="rounded-2xl bg-muted px-4 py-2 text-sm">
+                  <span className="animate-pulse">กำลังคิด...</span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Input */}

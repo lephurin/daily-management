@@ -2,60 +2,350 @@
 
 import { useState } from "react";
 import { TiptapEditor } from "@/features/daily-notes/components/tiptap-editor";
-import { saveDailyNote } from "@/features/daily-notes/services/daily-notes-actions";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  useDailyNoteQuery,
+  useDailyNotesHistoryQuery,
+  useSaveDailyNoteMutation,
+} from "@/features/dashboard/hooks/api-hooks";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { toast } from "sonner";
+
+type NoteRecord = {
+  id: string;
+  note_date: string;
+  title: string;
+  plain_text: string;
+  created_at: string;
+  updated_at: string;
+};
+
+type ViewMode = "editor" | "history";
 
 export default function DailyNotesPage() {
   const today = new Date().toISOString().split("T")[0];
   const [noteDate, setNoteDate] = useState(today);
-  const [saving, setSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+
+  const isPastDate = noteDate < today;
+
+  // History state
+  const [viewMode, setViewMode] = useState<ViewMode>("editor");
+  const [filterFrom, setFilterFrom] = useState(() => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - 1);
+    return d.toISOString().split("T")[0];
+  });
+  const [filterTo, setFilterTo] = useState(today);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Queries
+  const { data: noteData, isLoading: loading } = useDailyNoteQuery(noteDate);
+  const { data: historyData, isLoading: historyLoading } =
+    useDailyNotesHistoryQuery(filterFrom, filterTo, viewMode === "history");
+
+  const saveNoteMutation = useSaveDailyNoteMutation();
+
+  const historyNotes: NoteRecord[] = historyData?.data || [];
+  const existingContent = noteData?.data?.content
+    ? JSON.stringify(noteData.data.content)
+    : undefined;
 
   const handleSave = async (content: {
     json: Record<string, unknown>;
     text: string;
-  }) => {
-    setSaving(true);
+  }): Promise<boolean> => {
     try {
-      await saveDailyNote({
-        noteDate,
+      await saveNoteMutation.mutateAsync({
+        noteDate: noteDate,
         title: `Daily Note - ${noteDate}`,
         content: content.json,
         plainText: content.text,
       });
-    } finally {
-      setSaving(false);
+      toast.success("บันทึกสำเร็จ!", {
+        description: `บันทึกวันที่ ${noteDate} เรียบร้อย`,
+      });
+      setIsEditing(false); // Switch back to view mode
+      return true;
+    } catch (error) {
+      toast.error("บันทึกไม่สำเร็จ", {
+        description:
+          error instanceof Error
+            ? error.message
+            : "เกิดข้อผิดพลาดในการเชื่อมต่อ",
+      });
+      return false;
     }
   };
 
-  const handleExport = () => {
-    window.open(`/api/export?date=${noteDate}`, "_blank");
+  const handleExportFiltered = () => {
+    window.open(`/api/export?from=${filterFrom}&to=${filterTo}`, "_blank");
+  };
+
+  const handleOpenNote = (date: string) => {
+    setNoteDate(date);
+    setViewMode("editor");
+    setIsEditing(false); // Always open in View mode
+  };
+
+  // Filter history by search
+  const filteredNotes = historyNotes.filter((note) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      note.title.toLowerCase().includes(q) ||
+      note.plain_text.toLowerCase().includes(q)
+    );
+  });
+
+  const pageVariants = {
+    hidden: { opacity: 0, y: 10 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
   };
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <motion.div
+      className="mx-auto max-w-4xl space-y-6"
+      variants={pageVariants}
+      initial="hidden"
+      animate="visible"
+    >
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <h2 className="text-2xl font-bold tracking-tight">Daily Notes</h2>
           <p className="text-sm text-muted-foreground">บันทึกประจำวันของคุณ</p>
         </div>
-        <div className="flex items-center gap-3">
-          <Input
-            type="date"
-            value={noteDate}
-            onChange={(e) => setNoteDate(e.target.value)}
-            className="w-auto"
-          />
-          <Button variant="outline" size="sm" onClick={handleExport}>
-            📥 Export Excel
+        <div className="flex items-center gap-2">
+          <Button
+            variant={viewMode === "editor" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setViewMode("editor")}
+          >
+            ✏️ เขียน
+          </Button>
+          <Button
+            variant={viewMode === "history" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setViewMode("history")}
+          >
+            📋 ประวัติ
           </Button>
         </div>
       </div>
 
-      <TiptapEditor onSave={handleSave} />
-      {saving && (
-        <p className="text-sm text-muted-foreground">กำลังบันทึก...</p>
-      )}
-    </div>
+      <AnimatePresence mode="wait">
+        {viewMode === "editor" ? (
+          <motion.div
+            key="editor-view"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className="flex items-center justify-between rounded-lg border bg-card/50 px-4 py-3 mb-4">
+              <div className="text-sm text-muted-foreground">
+                📅 วันที่:{" "}
+                <span className="font-medium text-foreground">
+                  {new Date(noteDate).toLocaleDateString("th-TH", {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  })}
+                </span>
+                {isPastDate && (
+                  <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-xs">
+                    บันทึกเก่า
+                  </span>
+                )}
+              </div>
+
+              {!isPastDate && (
+                <Button
+                  variant={isEditing ? "default" : "outline"}
+                  size="sm"
+                  className="cursor-pointer"
+                  onClick={() => setIsEditing(!isEditing)}
+                >
+                  {isEditing ? "❌ ยกเลิกแก้ไข" : "✏️ แก้ไขบันทึก"}
+                </Button>
+              )}
+            </div>
+
+            {/* Editor Section */}
+            {loading ? (
+              <div className="flex flex-col gap-4 py-8">
+                <Skeleton className="h-10 w-3/4" />
+                <Skeleton className="h-6 w-1/2" />
+                <Skeleton className="h-40 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+            ) : (
+              <TiptapEditor
+                key={noteDate + (existingContent ? "hasContent" : "empty")}
+                content={existingContent}
+                editable={isEditing}
+                onSave={handleSave}
+              />
+            )}
+            {saveNoteMutation.isPending && (
+              <p className="mt-2 text-sm text-muted-foreground">
+                กำลังบันทึก...
+              </p>
+            )}
+          </motion.div>
+        ) : (
+          /* History View */
+          <motion.div
+            key="history-view"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="space-y-4"
+          >
+            {/* Filters */}
+            <div className="flex flex-wrap items-end gap-3 rounded-lg border bg-card p-4">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">
+                  จากวันที่
+                </label>
+                <Input
+                  type="date"
+                  value={filterFrom}
+                  onChange={(e) => setFilterFrom(e.target.value)}
+                  className="w-auto"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">
+                  ถึงวันที่
+                </label>
+                <Input
+                  type="date"
+                  value={filterTo}
+                  onChange={(e) => setFilterTo(e.target.value)}
+                  className="w-auto"
+                />
+              </div>
+              <div className="flex-1 space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">
+                  ค้นหา
+                </label>
+                <Input
+                  placeholder="ค้นหาจากชื่อหรือเนื้อหา..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportFiltered}
+                disabled={filteredNotes.length === 0}
+              >
+                📥 Export Excel
+              </Button>
+            </div>
+
+            {/* Table */}
+            {historyLoading ? (
+              <div className="flex flex-col gap-4 py-8">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-16 w-full" />
+                ))}
+              </div>
+            ) : filteredNotes.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+                <div className="rounded-full bg-muted p-4">
+                  <svg
+                    className="h-8 w-8 text-muted-foreground"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
+                    />
+                  </svg>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  ไม่พบบันทึกในช่วงเวลาที่เลือก
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-lg border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[130px]">วันที่</TableHead>
+                      <TableHead>ชื่อบันทึก</TableHead>
+                      <TableHead className="hidden md:table-cell">
+                        ตัวอย่างเนื้อหา
+                      </TableHead>
+                      <TableHead className="w-[160px]">อัปเดตล่าสุด</TableHead>
+                      <TableHead className="w-[80px]" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredNotes.map((note) => (
+                      <TableRow key={note.id}>
+                        <TableCell className="font-medium">
+                          {new Date(note.note_date).toLocaleDateString(
+                            "th-TH",
+                            {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            },
+                          )}
+                        </TableCell>
+                        <TableCell>{note.title}</TableCell>
+                        <TableCell className="hidden max-w-[250px] truncate text-muted-foreground md:table-cell">
+                          {note.plain_text?.slice(0, 80) || "—"}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {new Date(note.updated_at).toLocaleString("th-TH", {
+                            day: "2-digit",
+                            month: "short",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleOpenNote(note.note_date)}
+                          >
+                            เปิด
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground">
+              แสดง {filteredNotes.length} รายการ
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }

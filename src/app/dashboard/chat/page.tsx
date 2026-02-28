@@ -1,9 +1,9 @@
 "use client";
 
-import { UserProfileForm } from "@/features/user-profile/components/user-profile-form";
+import { AiChatPanel } from "@/features/ai-chatbot/components/ai-chat-panel";
 import { motion } from "framer-motion";
 
-export default function ProfilePage() {
+export default function ChatPage() {
   const pageVariants = {
     hidden: { opacity: 0, y: 10 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
@@ -11,18 +11,18 @@ export default function ProfilePage() {
 
   return (
     <motion.div
-      className="mx-auto max-w-4xl space-y-6"
+      className="mx-auto max-w-3xl space-y-6"
       variants={pageVariants}
       initial="hidden"
       animate="visible"
     >
       <div className="space-y-1">
-        <h2 className="text-2xl font-bold tracking-tight">Profile</h2>
+        <h2 className="text-2xl font-bold tracking-tight">AI Assistant</h2>
         <p className="text-sm text-muted-foreground">
-          จัดการโปรไฟล์และการตั้งค่าบัญชี
+          ถามอะไรก็ได้เกี่ยวกับงาน, นัดหมาย, หรือข้อมูลต่างๆ
         </p>
       </div>
-      <UserProfileForm />
+      <AiChatPanel />
     </motion.div>
   );
 }

@@ -3,7 +3,7 @@ import { create } from "zustand";
 export interface WidgetConfig {
   id: string;
   title: string;
-  type: "jira" | "calendar" | "gmail" | "daily-notes" | "ai-chatbot";
+  type: "jira" | "calendar" | "gmail";
   size: "small" | "medium" | "large";
   visible: boolean;
 }
@@ -28,20 +28,6 @@ const DEFAULT_WIDGETS: WidgetConfig[] = [
     title: "Gmail",
     type: "gmail",
     size: "medium",
-    visible: true,
-  },
-  {
-    id: "daily-notes-widget",
-    title: "Daily Notes",
-    type: "daily-notes",
-    size: "large",
-    visible: true,
-  },
-  {
-    id: "ai-chatbot-widget",
-    title: "AI Assistant",
-    type: "ai-chatbot",
-    size: "small",
     visible: true,
   },
 ];

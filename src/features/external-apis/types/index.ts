@@ -38,6 +38,7 @@ export interface CalendarEvent {
   location?: string;
   description?: string;
   organizer?: string;
+  htmlLink?: string;
 }
 
 export interface GmailMessage {
