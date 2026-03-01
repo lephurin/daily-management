@@ -15,6 +15,7 @@ import {
 } from "./widget-placeholders";
 
 import { useTranslations } from "next-intl";
+import { useDashboardPersistence } from "../hooks/use-dashboard-persistence";
 
 const widgetContentMap: Record<string, React.ComponentType> = {
   "jira-widget": JiraWidgetPlaceholder,
@@ -23,6 +24,7 @@ const widgetContentMap: Record<string, React.ComponentType> = {
 };
 
 export function DashboardGrid() {
+  useDashboardPersistence();
   const t = useTranslations("DashboardGrid");
   const { widgets } = useDashboardStore();
   const visibleWidgets = widgets.filter((w) => w.visible);

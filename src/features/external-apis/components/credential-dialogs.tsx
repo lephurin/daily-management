@@ -29,7 +29,7 @@ export function JiraCredentialDialog({ trigger }: { trigger?: ReactNode }) {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
   const { data: session } = useSession();
-  const userEmail = session?.user?.email;
+  const userId = session?.user?.id;
 
   const jiraSchema = z.object({
     baseUrl: z
@@ -59,10 +59,8 @@ export function JiraCredentialDialog({ trigger }: { trigger?: ReactNode }) {
   });
 
   useEffect(() => {
-    if (open && userEmail) {
-      const encryptedData = localStorage.getItem(
-        `jira_credentials_${userEmail}`,
-      );
+    if (open && userId) {
+      const encryptedData = localStorage.getItem(`jira_credentials_${userId}`);
       if (encryptedData) {
         try {
           const decryptedStr = decryptData(encryptedData);
@@ -75,15 +73,15 @@ export function JiraCredentialDialog({ trigger }: { trigger?: ReactNode }) {
         }
       }
     }
-  }, [open, reset, userEmail]);
+  }, [open, reset, userId]);
 
   const onSubmit = async (data: JiraFormData) => {
     try {
       const jsonString = JSON.stringify(data);
       const encryptedData = encryptData(jsonString);
 
-      if (userEmail) {
-        localStorage.setItem(`jira_credentials_${userEmail}`, encryptedData);
+      if (userId) {
+        localStorage.setItem(`jira_credentials_${userId}`, encryptedData);
       }
 
       toast.success(t("success"), {

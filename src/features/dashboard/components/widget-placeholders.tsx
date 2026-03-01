@@ -45,13 +45,13 @@ const itemVariants = {
 export function JiraWidgetPlaceholder() {
   const t = useTranslations("Widgets.jira");
   const { data: session } = useSession();
-  const userEmail = session?.user?.email;
+  const userId = session?.user?.id;
 
   const {
     data: sprintData,
     isLoading,
     error,
-  } = useJiraActiveSprintQuery(userEmail);
+  } = useJiraActiveSprintQuery(userId);
 
   const [searchTerm, setSearchTerm] = useState("");
 

@@ -120,15 +120,13 @@ export function useSaveDailyNoteMutation() {
   });
 }
 
-export function useJiraActiveSprintQuery(userEmail?: string | null) {
+export function useJiraActiveSprintQuery(userId?: string | null) {
   return useQuery<JiraActiveSprint>({
-    queryKey: ["jira-active-sprint", userEmail],
+    queryKey: ["jira-active-sprint", userId],
     queryFn: async (): Promise<JiraActiveSprint> => {
       // Note: This runs on the client so localStorage is available.
-      if (!userEmail) throw new Error("CREDENTIALS_NOT_FOUND");
-      const encryptedStr = localStorage.getItem(
-        `jira_credentials_${userEmail}`,
-      );
+      if (!userId) throw new Error("CREDENTIALS_NOT_FOUND");
+      const encryptedStr = localStorage.getItem(`jira_credentials_${userId}`);
       if (!encryptedStr) throw new Error("CREDENTIALS_NOT_FOUND");
 
       const decryptedStr = decryptData(encryptedStr);

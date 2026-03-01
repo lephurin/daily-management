@@ -87,6 +87,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     signIn: "/login",
   },
   callbacks: {
+    async signIn({ user }) {
+      if (user.email) {
+        try {
+          // Ensure a profile exists in Supabase to have a stable UUID
+          const { error } = await supabaseAdmin.from("user_profiles").upsert(
+            {
+              user_id: user.email,
+              name: user.name || "",
+              avatar_url: user.image || null,
+            },
+            { onConflict: "user_id" },
+          );
+          if (error)
+            console.error("Error ensuring user profile on signIn:", error);
+        } catch (err) {
+          console.error("Failed to ensure user profile on signIn:", err);
+        }
+      }
+      return true;
+    },
     async jwt({ token, user, account, trigger, session }) {
       if (user && account) {
         token.id = user.id;
@@ -104,12 +124,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           if (user.email) {
             const { data } = await supabaseAdmin
               .from("user_profiles")
-              .select("pdpa_consented, role")
+              .select("id, pdpa_consented, role")
               .eq("user_id", user.email)
               .single();
-            token.hasConsented = data?.pdpa_consented || false;
-            if (data?.role) {
-              token.role = data.role;
+
+            if (data) {
+              token.id = data.id; // Use Supabase UUID as the stable ID
+              token.hasConsented = data.pdpa_consented || false;
+              if (data.role) {
+                token.role = data.role;
+              }
+            } else {
+              token.hasConsented = false;
             }
           }
         } catch {
