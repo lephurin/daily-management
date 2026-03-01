@@ -1,10 +1,16 @@
 "use server";
 
 import { auth } from "@/lib/auth";
+import { axios } from "@/lib/axios";
 import type {
   JiraSprint,
   CalendarEvent,
   GmailMessage,
+  JiraBoardSprintResponse,
+  JiraSprintIssuesResponse,
+  GoogleCalendarEventsResponse,
+  GmailListResponse,
+  GmailMessageDetailResponse,
 } from "@/features/external-apis/types";
 
 /**
@@ -13,9 +19,9 @@ import type {
 async function getGoogleAccessToken(): Promise<string | null> {
   const session = await auth();
   if (!session?.user) return null;
-  const user = session.user as unknown as Record<string, unknown>;
+  const user = session.user;
   if (user.provider !== "google") return null;
-  return (user.accessToken as string) || null;
+  return user.accessToken || null;
 }
 
 /**
@@ -35,31 +41,25 @@ export async function fetchJiraActiveSprint(
     };
 
     // Get active sprint
-    const sprintRes = await fetch(
+    const sprintRes = (await axios.get<JiraBoardSprintResponse>(
       `${baseUrl}/rest/agile/1.0/board/${boardId}/sprint?state=active`,
       { headers },
-    );
-
-    if (!sprintRes.ok) {
-      throw new Error(`Jira API error: ${sprintRes.status}`);
-    }
-
-    const sprintData = await sprintRes.json();
-    const activeSprint = sprintData.values?.[0];
+    )) as unknown as JiraBoardSprintResponse;
+    const activeSprint = sprintRes?.values?.[0];
 
     if (!activeSprint) return null;
 
-    // Get issues in the sprint
-    const issuesRes = await fetch(
-      `${baseUrl}/rest/agile/1.0/sprint/${activeSprint.id}/issue?fields=summary,status,assignee,priority,updated`,
-      { headers },
-    );
-
-    if (!issuesRes.ok) {
-      throw new Error(`Jira API error: ${issuesRes.status}`);
-    }
-
-    const issuesData = await issuesRes.json();
+    // Get issues in the sprint, filtered by assignee = current user
+    const issuesRes = (await axios.get<JiraSprintIssuesResponse>(
+      `${baseUrl}/rest/agile/1.0/sprint/${activeSprint.id}/issue`,
+      {
+        headers,
+        params: {
+          fields: "summary,status,assignee,priority,updated",
+          jql: "assignee=currentUser()",
+        },
+      },
+    )) as unknown as JiraSprintIssuesResponse;
 
     return {
       id: activeSprint.id,
@@ -67,27 +67,15 @@ export async function fetchJiraActiveSprint(
       state: activeSprint.state,
       startDate: activeSprint.startDate,
       endDate: activeSprint.endDate,
-      issues: issuesData.issues?.map(
-        (issue: {
-          id: string;
-          key: string;
-          fields: {
-            summary: string;
-            status: { name: string };
-            assignee: { displayName: string } | null;
-            priority: { name: string };
-            updated: string;
-          };
-        }) => ({
-          id: issue.id,
-          key: issue.key,
-          summary: issue.fields.summary,
-          status: issue.fields.status.name,
-          assignee: issue.fields.assignee?.displayName || null,
-          priority: issue.fields.priority.name,
-          updated: issue.fields.updated,
-        }),
-      ),
+      issues: (issuesRes?.issues || []).map((issue) => ({
+        id: issue.id,
+        key: issue.key,
+        summary: issue.fields.summary,
+        status: issue.fields.status.name,
+        assignee: issue.fields.assignee?.displayName || null,
+        priority: issue.fields.priority?.name || "",
+        updated: issue.fields.updated,
+      })),
     };
   } catch (error) {
     console.error("Failed to fetch Jira sprint:", error);
@@ -108,64 +96,43 @@ export async function fetchGoogleCalendarEvents(): Promise<CalendarEvent[]> {
     }
 
     const now = new Date();
-    const startOfDay = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-      0,
-      0,
-      0,
+    // Use a wider range (+/- 12 hours) to handle timezone differences between server and client
+    const startRange = new Date(
+      now.getTime() - 12 * 60 * 60 * 1000,
     ).toISOString();
-    const endOfDay = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-      23,
-      59,
-      59,
+    const endRange = new Date(
+      now.getTime() + 36 * 60 * 60 * 1000,
     ).toISOString();
 
-    const res = await fetch(
-      `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${startOfDay}&timeMax=${endOfDay}&singleEvents=true&orderBy=startTime`,
+    const res = (await axios.get<GoogleCalendarEventsResponse>(
+      `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${startRange}&timeMax=${endRange}&singleEvents=true&orderBy=startTime`,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
       },
-    );
+    )) as unknown as GoogleCalendarEventsResponse;
 
-    if (!res.ok) {
-      const errBody = await res.text();
-      console.error(`Calendar API error: ${res.status}`, errBody);
-      return [];
-    }
+    return (res?.items || []).map((event) => {
+      const title = event.summary?.trim() || "";
+      let fallbackTitle = "(ไม่มีชื่อ)";
+      if (event.hangoutLink) fallbackTitle = "Google Meet";
 
-    const data = await res.json();
+      // Final fallback if everything is empty
+      const finalTitle = title || fallbackTitle;
 
-    return (
-      data.items?.map(
-        (event: {
-          id: string;
-          summary?: string;
-          start: { dateTime?: string; date?: string };
-          end: { dateTime?: string; date?: string };
-          location?: string;
-          description?: string;
-          organizer?: { email: string };
-          htmlLink?: string;
-        }) => ({
-          id: event.id,
-          title: event.summary || "(ไม่มีชื่อ)",
-          start: event.start.dateTime || event.start.date,
-          end: event.end.dateTime || event.end.date,
-          location: event.location,
-          description: event.description,
-          organizer: event.organizer?.email,
-          htmlLink: event.htmlLink,
-        }),
-      ) || []
-    );
+      return {
+        id: event.id,
+        title: finalTitle,
+        start: event.start?.dateTime || event.start?.date || "",
+        end: event.end?.dateTime || event.end?.date || "",
+        location: event.location,
+        description: event.description,
+        organizer: event.organizer?.email,
+        htmlLink: event.hangoutLink || event.htmlLink,
+      };
+    });
   } catch (error) {
     console.error("Failed to fetch calendar events:", error);
     return [];
@@ -185,42 +152,31 @@ export async function fetchGmailMessages(): Promise<GmailMessage[]> {
     }
 
     // List recent messages
-    const listRes = await fetch(
+    const listRes = (await axios.get<GmailListResponse>(
       `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=10&q=in:inbox`,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
       },
-    );
-
-    if (!listRes.ok) {
-      const errBody = await listRes.text();
-      console.error(`Gmail API error: ${listRes.status}`, errBody);
-      return [];
-    }
-
-    const listData = await listRes.json();
-    const messageIds: { id: string; threadId: string }[] =
-      listData.messages || [];
+    )) as unknown as GmailListResponse;
+    const messageIds = listRes?.messages || [];
 
     if (messageIds.length === 0) return [];
 
     // Fetch individual message details (batch)
     const messages = await Promise.all(
       messageIds.slice(0, 10).map(async (msg) => {
-        const detailRes = await fetch(
+        const detailRes = (await axios.get<GmailMessageDetailResponse>(
           `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date`,
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,
             },
           },
-        );
+        )) as unknown as GmailMessageDetailResponse;
 
-        if (!detailRes.ok) return null;
-
-        const detail = await detailRes.json();
+        const detail = detailRes || {};
         const headers: { name: string; value: string }[] =
           detail.payload?.headers || [];
 
@@ -247,16 +203,4 @@ export async function fetchGmailMessages(): Promise<GmailMessage[]> {
     console.error("Failed to fetch Gmail messages:", error);
     return [];
   }
-}
-
-/**
- * Save external API credentials (placeholder for DB integration)
- */
-export async function saveExternalCredentials(
-  provider: "jira",
-  credentials: Record<string, string>,
-) {
-  // TODO: Encrypt and save to Supabase oauth_tokens table
-  console.log(`Saving ${provider} credentials:`, Object.keys(credentials));
-  return { success: true };
 }

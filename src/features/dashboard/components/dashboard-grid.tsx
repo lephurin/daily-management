@@ -1,5 +1,11 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
+import { useState, useEffect } from "react";
+import dayjs from "dayjs";
+
 import {
   DndContext,
   closestCenter,
@@ -48,6 +54,55 @@ export function DashboardGrid() {
   const { widgets, reorderWidgets } = useDashboardStore();
   const visibleWidgets = widgets.filter((w) => w.visible);
 
+  const queryClient = useQueryClient();
+  const [isReloading, setIsReloading] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | "failed" | null>(null);
+
+  useEffect(() => {
+    // Set initial load time on client-side to prevent hydration mismatch
+    // Deferred to avoid cascading renders warning from React Compiler.
+    const timer = setTimeout(() => {
+      setLastUpdated(new Date());
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleManualReload = async () => {
+    if (isReloading) return;
+    setIsReloading(true);
+
+    try {
+      // Invalidate all queries so widgets fetch fresh data
+      await queryClient.invalidateQueries();
+
+      // Check if there are any real network/server errors (ignoring unconfigured auth errors)
+      const activeQueries = queryClient
+        .getQueryCache()
+        .getAll()
+        .filter((q) => q.isActive());
+      const hasRealErrors = activeQueries.some((q) => {
+        if (q.state.status !== "error") return false;
+        const msg = (q.state.error as Error)?.message || "";
+        const isAuthError =
+          msg.includes("CREDENTIALS") ||
+          msg.includes("DECRYPT") ||
+          msg.includes("Unauthorized");
+        return !isAuthError;
+      });
+
+      if (!hasRealErrors) {
+        setLastUpdated(new Date());
+      } else {
+        setLastUpdated("failed");
+      }
+    } finally {
+      // Add a small delay for visual feedback, then stop spinning
+      setTimeout(() => {
+        setIsReloading(false);
+      }, 500);
+    }
+  };
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 8 },
@@ -65,33 +120,59 @@ export function DashboardGrid() {
   };
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragEnd={handleDragEnd}
-    >
-      <SortableContext
-        items={visibleWidgets.map((w) => w.id)}
-        strategy={rectSortingStrategy}
-      >
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="grid grid-cols-1 gap-4 md:grid-cols-2"
+    <div className="space-y-4">
+      <div className="flex justify-end items-center gap-3">
+        {lastUpdated === "failed" ? (
+          <span className="text-xs text-red-500 animate-in fade-in duration-500 font-medium">
+            โหลดข้อมูลล่าสุดไม่สำเร็จ
+          </span>
+        ) : lastUpdated ? (
+          <span className="text-xs text-muted-foreground animate-in fade-in duration-500">
+            อัปเดตล่าสุด: {dayjs(lastUpdated).format("MMMM D, YYYY HH:mm")}
+          </span>
+        ) : null}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleManualReload}
+          disabled={isReloading}
+          className="gap-2"
         >
-          {visibleWidgets.map((widget) => {
-            const Content = widgetContentMap[widget.id];
-            return (
-              <motion.div variants={itemVariants} key={widget.id}>
-                <SortableWidget widget={widget}>
-                  {Content ? <Content /> : null}
-                </SortableWidget>
-              </motion.div>
-            );
-          })}
-        </motion.div>
-      </SortableContext>
-    </DndContext>
+          <RefreshCw
+            className={`h-4 w-4 ${isReloading ? "animate-spin" : ""}`}
+          />
+          {isReloading ? "กำลังโหลด..." : "โหลดข้อมูลใหม่"}
+        </Button>
+      </div>
+
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext
+          items={visibleWidgets.map((w) => w.id)}
+          strategy={rectSortingStrategy}
+        >
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="grid grid-cols-1 gap-4 md:grid-cols-2"
+          >
+            {visibleWidgets.map((widget) => {
+              const Content = widgetContentMap[widget.id];
+              return (
+                <motion.div variants={itemVariants} key={widget.id}>
+                  <SortableWidget widget={widget}>
+                    {Content ? <Content /> : null}
+                  </SortableWidget>
+                </motion.div>
+              );
+            })}
+          </motion.div>
+        </SortableContext>
+      </DndContext>
+    </div>
   );
 }

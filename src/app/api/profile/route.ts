@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   fetchUserProfile,
-  saveUserProfile,
+  updateUserProfile,
 } from "@/features/user-profile/services/profile-actions";
 
 export async function GET() {
@@ -21,11 +21,8 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const result = await saveUserProfile({
-      name: body.name,
-      position: body.position,
-    });
+    const formData = await req.formData();
+    const result = await updateUserProfile(formData);
 
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 400 });
@@ -33,6 +30,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, data: result });
   } catch (error) {
+    console.error("Profile API error:", error);
     return NextResponse.json(
       { error: "Failed to update profile" },
       { status: 500 },

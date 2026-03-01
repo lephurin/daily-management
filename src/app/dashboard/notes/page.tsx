@@ -8,6 +8,7 @@ import {
   useDailyNotesHistoryQuery,
   useSaveDailyNoteMutation,
 } from "@/features/dashboard/hooks/api-hooks";
+import { DailyNote } from "@/features/daily-notes/types";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,15 +22,6 @@ import {
 } from "@/components/ui/table";
 import { toast } from "sonner";
 
-type NoteRecord = {
-  id: string;
-  note_date: string;
-  title: string;
-  plain_text: string;
-  created_at: string;
-  updated_at: string;
-};
-
 type ViewMode = "editor" | "history";
 
 export default function DailyNotesPage() {
@@ -41,6 +33,7 @@ export default function DailyNotesPage() {
 
   // History state
   const [viewMode, setViewMode] = useState<ViewMode>("editor");
+
   const [filterFrom, setFilterFrom] = useState(() => {
     const d = new Date();
     d.setMonth(d.getMonth() - 1);
@@ -56,9 +49,9 @@ export default function DailyNotesPage() {
 
   const saveNoteMutation = useSaveDailyNoteMutation();
 
-  const historyNotes: NoteRecord[] = historyData?.data || [];
-  const existingContent = noteData?.data?.content
-    ? JSON.stringify(noteData.data.content)
+  const historyNotes: DailyNote[] = historyData || [];
+  const existingContent = noteData?.content
+    ? JSON.stringify(noteData.content)
     : undefined;
 
   const handleSave = async (content: {
@@ -86,10 +79,6 @@ export default function DailyNotesPage() {
       });
       return false;
     }
-  };
-
-  const handleExportFiltered = () => {
-    window.open(`/api/export?from=${filterFrom}&to=${filterTo}`, "_blank");
   };
 
   const handleOpenNote = (date: string) => {
@@ -248,14 +237,6 @@ export default function DailyNotesPage() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleExportFiltered}
-                disabled={filteredNotes.length === 0}
-              >
-                📥 Export Excel
-              </Button>
             </div>
 
             {/* Table */}

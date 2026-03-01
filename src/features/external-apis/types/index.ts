@@ -28,6 +28,11 @@ export interface JiraSprint {
   startDate: string;
   endDate: string;
   issues: JiraIssue[];
+  baseUrl?: string;
+}
+
+export interface JiraActiveSprint extends JiraSprint {
+  baseUrl: string;
 }
 
 export interface CalendarEvent {
@@ -49,4 +54,63 @@ export interface GmailMessage {
   date: string;
   snippet: string;
   isUnread: boolean;
+}
+
+// Raw API Response Interfaces
+export interface JiraBoardSprintResponse {
+  values: {
+    id: number;
+    name: string;
+    state: string;
+    startDate: string;
+    endDate: string;
+  }[];
+}
+
+export interface JiraSprintIssuesResponse {
+  issues: {
+    id: string;
+    key: string;
+    fields: {
+      summary: string;
+      status: { name: string };
+      assignee: { displayName: string } | null;
+      priority: { name: string | null } | null;
+      updated: string;
+    };
+  }[];
+}
+
+export interface GoogleCalendarEventsResponse {
+  items: {
+    id: string;
+    summary?: string;
+    start: { dateTime?: string; date?: string };
+    end: { dateTime?: string; date?: string };
+    location?: string;
+    description?: string;
+    organizer?: { email: string };
+    htmlLink?: string;
+    hangoutLink?: string;
+  }[];
+}
+
+export interface GmailListResponse {
+  messages: { id: string; threadId: string }[];
+}
+
+export interface GmailMessageDetailResponse {
+  id: string;
+  threadId: string;
+  snippet?: string;
+  labelIds?: string[];
+  payload?: {
+    headers: { name: string; value: string }[];
+  };
+}
+
+export interface GoogleTokenResponse {
+  access_token: string;
+  expires_in: number;
+  refresh_token?: string;
 }

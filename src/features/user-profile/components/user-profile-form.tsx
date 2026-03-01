@@ -38,6 +38,7 @@ type ProfileFormData = z.infer<typeof profileSchema>;
 
 export function UserProfileForm() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [pendingAvatarBlob, setPendingAvatarBlob] = useState<Blob | null>(null);
   const [cropDialogOpen, setCropDialogOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -63,20 +64,28 @@ export function UserProfileForm() {
   const watchedName = watch("name");
 
   useEffect(() => {
-    if (profileData?.data) {
+    if (profileData) {
       reset({
-        name: profileData.data.name || "",
-        position: profileData.data.position || "",
-        email: profileData.data.user_id || "",
+        name: profileData.name || "",
+        position: profileData.position || "",
+        email: profileData.user_id || "",
       });
-      if (profileData.data.avatar_url)
-        setAvatarUrl(profileData.data.avatar_url);
+      if (profileData.avatar_url) setAvatarUrl(profileData.avatar_url);
     }
   }, [profileData, reset]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // 1MB size limit check before even cropping
+    if (file.size > 1024 * 1024) {
+      toast.error("ขนาดไฟล์ใหญ่เกินไป", {
+        description: "กรุณาเลือกรูปภาพที่มีขนาดไม่เกิน 1MB",
+      });
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = () => {
@@ -87,24 +96,22 @@ export function UserProfileForm() {
   };
 
   const handleCropComplete = async (blob: Blob) => {
+    // Only set the preview and store the blob for later upload
     const url = URL.createObjectURL(blob);
     setAvatarUrl(url);
+    setPendingAvatarBlob(blob);
   };
 
   const onSubmit = async (data: ProfileFormData) => {
-    updateProfile.mutate(
-      { name: data.name, position: data.position || "" },
-      {
-        onSuccess: () => {
-          toast.success("บันทึกโปรไฟล์สำเร็จ!");
-        },
-        onError: (error: Error) => {
-          toast.error("บันทึกไม่สำเร็จ", {
-            description: error.message || "เกิดข้อผิดพลาด",
-          });
-        },
-      },
-    );
+    const formData = new FormData();
+    formData.append("name", data.name);
+    formData.append("position", data.position || "");
+
+    if (pendingAvatarBlob) {
+      formData.append("file", pendingAvatarBlob, "avatar.jpg");
+    }
+
+    updateProfile.mutate(formData);
   };
 
   const formVariants = {
@@ -175,6 +182,7 @@ export function UserProfileForm() {
                     type="button"
                     className="cursor-pointer"
                     onClick={() => fileInputRef.current?.click()}
+                    disabled={updateProfile.isPending}
                   >
                     เปลี่ยนรูปโปรไฟล์
                   </Button>
@@ -186,7 +194,7 @@ export function UserProfileForm() {
                     onChange={handleFileSelect}
                   />
                   <p className="text-xs text-muted-foreground">
-                    JPG, PNG ขนาดไม่เกิน 5MB
+                    JPG, PNG ขนาดไม่เกิน 1MB
                   </p>
                 </div>
               </div>

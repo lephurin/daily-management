@@ -1,20 +1,26 @@
 export interface DailyNote {
   id: string;
-  userId: string;
+  user_id: string;
   title: string;
-  content: Record<string, unknown>; // Tiptap JSON
-  plainText: string;
-  noteDate: string; // YYYY-MM-DD
-  createdAt: string;
-  updatedAt: string;
+  content: Record<string, unknown>;
+  plain_text: string;
+  note_date: string; // ISO Date YYYY-MM-DD
+  created_at: string;
+  updated_at: string;
 }
 
-export interface NoteRevision {
-  id: string;
-  noteId: string;
-  userId: string;
+export interface SaveDailyNoteRequest {
+  noteDate: string;
+  title: string;
   content: Record<string, unknown>;
   plainText: string;
-  revisionNumber: number;
-  createdAt: string;
+}
+
+export interface DailyNoteRevision {
+  id: string;
+  note_id: string;
+  content: Record<string, unknown>;
+  plain_text: string;
+  revision_number: number;
+  created_at: string;
 }

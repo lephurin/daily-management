@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -18,48 +17,43 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { Member } from "@/features/members/types";
-
-// Mock data - will be replaced with Supabase query
-const MOCK_MEMBERS: Member[] = [
-  {
-    id: "1",
-    email: "admin@example.com",
-    name: "Admin User",
-    avatarUrl: null,
-    role: "super_admin",
-    createdAt: "2024-01-01T00:00:00Z",
-  },
-  {
-    id: "2",
-    email: "user1@example.com",
-    name: "Regular User",
-    avatarUrl: null,
-    role: "user",
-    createdAt: "2024-02-15T00:00:00Z",
-  },
-  {
-    id: "3",
-    email: "user2@example.com",
-    name: "Another User",
-    avatarUrl: null,
-    role: "user",
-    createdAt: "2024-03-20T00:00:00Z",
-  },
-];
+import { Skeleton } from "@/components/ui/skeleton";
+import type { Member, UpdateMemberRoleRequest } from "@/features/members/types";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { axios } from "@/lib/axios";
+import { toast } from "sonner";
 
 export function MemberDataTable() {
-  const [members, setMembers] = useState<Member[]>(MOCK_MEMBERS);
+  const queryClient = useQueryClient();
 
-  const handleRoleChange = async (
+  const { data: members = [], isLoading } = useQuery<Member[]>({
+    queryKey: ["members"],
+    queryFn: async () => {
+      const response = await axios.get<Member[]>("/api/members");
+      return response.data as Member[];
+    },
+  });
+
+  const { mutate: updateRole, isPending } = useMutation({
+    mutationFn: async ({ memberId, newRole }: UpdateMemberRoleRequest) => {
+      await axios.patch(`/api/members/${encodeURIComponent(memberId)}`, {
+        newRole,
+      });
+    },
+    onSuccess: () => {
+      toast.success("อัปเดตสิทธิ์สำเร็จ");
+      queryClient.invalidateQueries({ queryKey: ["members"] });
+    },
+    onError: () => {
+      toast.error("เกิดข้อผิดพลาดในการอัปเดตสิทธิ์");
+    },
+  });
+
+  const handleRoleChange = (
     memberId: string,
     newRole: "super_admin" | "user",
   ) => {
-    // TODO: Update role in Supabase
-    setMembers((prev) =>
-      prev.map((m) => (m.id === memberId ? { ...m, role: newRole } : m)),
-    );
-    console.log(`Role updated for ${memberId}: ${newRole}`);
+    updateRole({ memberId, newRole });
   };
 
   return (
@@ -75,51 +69,68 @@ export function MemberDataTable() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {members.map((member) => (
-            <TableRow key={member.id}>
-              <TableCell>
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={member.avatarUrl || undefined} />
-                  <AvatarFallback className="text-xs">
-                    {member.name?.charAt(0) || "U"}
-                  </AvatarFallback>
-                </Avatar>
-              </TableCell>
-              <TableCell className="font-medium">
-                {member.name || "-"}
-              </TableCell>
-              <TableCell className="text-muted-foreground">
-                {member.email}
-              </TableCell>
-              <TableCell>
-                <Select
-                  value={member.role}
-                  onValueChange={(value: "super_admin" | "user") =>
-                    handleRoleChange(member.id, value)
-                  }
-                >
-                  <SelectTrigger className="w-[140px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="super_admin">
-                      <Badge variant="default" className="text-xs">
-                        Super Admin
-                      </Badge>
-                    </SelectItem>
-                    <SelectItem value="user">
-                      <Badge variant="secondary" className="text-xs">
-                        User
-                      </Badge>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </TableCell>
-              <TableCell className="text-sm text-muted-foreground">
-                {new Date(member.createdAt).toLocaleDateString("th-TH")}
+          {isLoading ? (
+            <TableRow>
+              <TableCell colSpan={5} className="h-24 text-center">
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full mt-2" />
+                <Skeleton className="h-8 w-full mt-2" />
               </TableCell>
             </TableRow>
-          ))}
+          ) : members?.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={5} className="h-24 text-center">
+                ไม่พบข้อมูลสมาชิก
+              </TableCell>
+            </TableRow>
+          ) : (
+            members?.map((member: Member) => (
+              <TableRow key={member.id}>
+                <TableCell>
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={member.avatarUrl || undefined} />
+                    <AvatarFallback className="text-xs">
+                      {member.name?.charAt(0) || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                </TableCell>
+                <TableCell className="font-medium">
+                  {member.name || "-"}
+                </TableCell>
+                <TableCell className="text-muted-foreground">
+                  {member.email}
+                </TableCell>
+                <TableCell>
+                  <Select
+                    value={member.role}
+                    onValueChange={(value: "super_admin" | "user") =>
+                      handleRoleChange(member.id, value)
+                    }
+                    disabled={isPending}
+                  >
+                    <SelectTrigger className="w-[140px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="super_admin">
+                        <Badge variant="default" className="text-xs">
+                          Super Admin
+                        </Badge>
+                      </SelectItem>
+                      <SelectItem value="user">
+                        <Badge variant="secondary" className="text-xs">
+                          User
+                        </Badge>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </TableCell>
+                <TableCell className="text-sm text-muted-foreground">
+                  {new Date(member.createdAt).toLocaleDateString("th-TH")}
+                </TableCell>
+              </TableRow>
+            ))
+          )}
         </TableBody>
       </Table>
     </div>

@@ -15,22 +15,29 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { saveExternalCredentials } from "@/features/external-apis/services/external-api-actions";
-import { useState } from "react";
+import { encryptData, decryptData } from "@/lib/encryption";
+import { useState, useEffect, ReactNode } from "react";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
 
 const jiraSchema = z.object({
   baseUrl: z
     .string()
-    .url("กรุณาใส่ URL ที่ถูกต้อง")
+    .url("กรุณาใส่ URL ที่ถูกต้อง (ต้องมี https://)")
     .min(1, "กรุณาใส่ Base URL"),
   email: z.string().email("กรุณาใส่อีเมลที่ถูกต้อง"),
   apiToken: z.string().min(1, "กรุณาใส่ API Token"),
+  boardId: z.string().min(1, "กรุณาใส่ Board ID"),
 });
 
 type JiraFormData = z.infer<typeof jiraSchema>;
 
-export function JiraCredentialDialog() {
+export function JiraCredentialDialog({ trigger }: { trigger?: ReactNode }) {
   const [open, setOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const { data: session } = useSession();
+  const userEmail = session?.user?.email;
 
   const {
     register,
@@ -43,25 +50,62 @@ export function JiraCredentialDialog() {
       baseUrl: "",
       email: "",
       apiToken: "",
+      boardId: "",
     },
   });
 
+  useEffect(() => {
+    if (open && userEmail) {
+      const encryptedData = localStorage.getItem(
+        `jira_credentials_${userEmail}`,
+      );
+      if (encryptedData) {
+        try {
+          const decryptedStr = decryptData(encryptedData);
+          if (decryptedStr) {
+            const parsed = JSON.parse(decryptedStr);
+            reset(parsed);
+          }
+        } catch (error) {
+          console.error("Failed to parse existing jira credentials", error);
+        }
+      }
+    }
+  }, [open, reset, userEmail]);
+
   const onSubmit = async (data: JiraFormData) => {
     try {
-      await saveExternalCredentials("jira", data);
+      const jsonString = JSON.stringify(data);
+      const encryptedData = encryptData(jsonString);
+
+      if (userEmail) {
+        localStorage.setItem(`jira_credentials_${userEmail}`, encryptedData);
+      }
+
+      toast.success("เชื่อมต่อสำเร็จ", {
+        description: "บันทึกข้อมูล Jira API เรียบร้อยแล้ว",
+      });
+
       setOpen(false);
-      reset();
+
+      // Invalidate the query to refresh the widget
+      queryClient.invalidateQueries({ queryKey: ["jira-active-sprint"] });
     } catch (error) {
       console.error("Failed to save Jira credentials:", error);
+      toast.error("ข้อผิดพลาด", {
+        description: "ไม่สามารถบันทึกข้อมูลได้",
+      });
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          Connect Jira
-        </Button>
+        {trigger || (
+          <Button variant="outline" size="sm">
+            Connect Jira
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
@@ -104,6 +148,18 @@ export function JiraCredentialDialog() {
             />
             {errors.apiToken && (
               <p className="text-xs text-red-500">{errors.apiToken.message}</p>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="jira-board">Board ID</Label>
+            <Input
+              id="jira-board"
+              type="text"
+              placeholder="e.g. 1"
+              {...register("boardId")}
+            />
+            {errors.boardId && (
+              <p className="text-xs text-red-500">{errors.boardId.message}</p>
             )}
           </div>
           <DialogFooter>

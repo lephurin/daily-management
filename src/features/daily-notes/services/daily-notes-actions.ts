@@ -2,16 +2,15 @@
 
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { ActionResponse } from "@/types/api";
+import { DailyNote, SaveDailyNoteRequest } from "../types";
 
 /**
  * Save or update a daily note (upsert by user email + date)
  */
-export async function saveDailyNote(data: {
-  noteDate: string;
-  title: string;
-  content: Record<string, unknown>;
-  plainText: string;
-}) {
+export async function saveDailyNote(
+  data: SaveDailyNoteRequest,
+): Promise<ActionResponse> {
   const session = await auth();
   if (!session?.user?.email) {
     return { success: false, error: "Unauthorized" };
@@ -47,7 +46,9 @@ export async function saveDailyNote(data: {
 /**
  * Fetch daily note for a specific date
  */
-export async function fetchDailyNote(noteDate: string) {
+export async function fetchDailyNote(
+  noteDate: string,
+): Promise<DailyNote | null> {
   const session = await auth();
   if (!session?.user?.email) return null;
 
@@ -67,7 +68,7 @@ export async function fetchDailyNote(noteDate: string) {
       return null;
     }
 
-    return data || null;
+    return (data as DailyNote) || null;
   } catch (err) {
     console.error("Failed to fetch daily note:", err);
     return null;
@@ -77,7 +78,10 @@ export async function fetchDailyNote(noteDate: string) {
 /**
  * Fetch daily notes within a date range (for export)
  */
-export async function fetchDailyNotesRange(startDate: string, endDate: string) {
+export async function fetchDailyNotesRange(
+  startDate: string,
+  endDate: string,
+): Promise<DailyNote[]> {
   const session = await auth();
   if (!session?.user?.email) return [];
 
@@ -97,7 +101,7 @@ export async function fetchDailyNotesRange(startDate: string, endDate: string) {
       return [];
     }
 
-    return data || [];
+    return (data as DailyNote[]) || [];
   } catch (err) {
     console.error("Failed to fetch daily notes range:", err);
     return [];

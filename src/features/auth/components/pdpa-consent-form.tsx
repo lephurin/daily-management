@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { updatePdpaConsent } from "@/features/user-profile/services/profile-actions";
 import {
   Card,
   CardContent,
@@ -18,15 +20,20 @@ export function PdpaConsentForm() {
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { update } = useSession();
 
   const handleConsent = async () => {
     if (!agreed) return;
     setLoading(true);
 
     try {
-      // TODO: Call server action to update user's pdpa_consented in DB
-      // await updatePdpaConsent(true);
-      router.push("/dashboard");
+      const res = await updatePdpaConsent(true);
+      if (res.success) {
+        await update({ hasConsented: true });
+        router.push("/dashboard");
+      } else {
+        console.error("Failed to save consent:", res.error);
+      }
     } catch (error) {
       console.error("Failed to save consent:", error);
     } finally {

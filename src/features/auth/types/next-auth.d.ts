@@ -9,6 +9,10 @@ declare module "next-auth" {
     user: User & {
       id: string;
       role: string;
+      provider?: string;
+      accessToken?: string;
+      hasConsented?: boolean;
+      error?: string;
     };
   }
 }
@@ -18,5 +22,10 @@ declare module "next-auth/jwt" {
     id?: string;
     role?: string;
     provider?: string;
+    accessToken?: string;
+    refreshToken?: string;
+    expiresAt?: number;
+    hasConsented?: boolean;
+    error?: string;
   }
 }

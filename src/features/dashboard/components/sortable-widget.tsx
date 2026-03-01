@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { ReactNode } from "react";
@@ -18,6 +19,12 @@ const sizeClasses: Record<WidgetConfig["size"], string> = {
 };
 
 export function SortableWidget({ widget, children }: SortableWidgetProps) {
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const {
     attributes,
     listeners,
@@ -42,8 +49,8 @@ export function SortableWidget({ widget, children }: SortableWidgetProps) {
     >
       <CardHeader
         className="cursor-grab active:cursor-grabbing"
-        {...attributes}
-        {...listeners}
+        {...(mounted ? attributes : {})}
+        {...(mounted ? listeners : {})}
       >
         <CardTitle className="flex items-center gap-2 text-base">
           <svg

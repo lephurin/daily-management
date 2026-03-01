@@ -1,6 +1,46 @@
 import NextAuth from "next-auth";
+import type { JWT } from "next-auth/jwt";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+import { axios } from "@/lib/axios";
+import { GoogleTokenResponse } from "@/features/external-apis/types";
+
+/**
+ * Request a new access token from Google using the refresh token
+ */
+async function refreshAccessToken(token: JWT): Promise<JWT> {
+  try {
+    const refreshedTokens = (await axios.post<GoogleTokenResponse>(
+      "https://oauth2.googleapis.com/token",
+      new URLSearchParams({
+        client_id: process.env.GOOGLE_CLIENT_ID!,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+        grant_type: "refresh_token",
+        refresh_token: token.refreshToken as string,
+      }).toString(),
+      {
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      },
+    )) as unknown as GoogleTokenResponse;
+
+    return {
+      ...token,
+      accessToken: refreshedTokens.access_token,
+      // expires_in is in seconds, expiresAt expects timestamp in seconds
+      expiresAt: Math.floor(Date.now() / 1000) + refreshedTokens.expires_in,
+      // Fall back to old refresh token if a new one is not returned
+      refreshToken: refreshedTokens.refresh_token ?? token.refreshToken,
+    };
+  } catch (error) {
+    console.error("RefreshAccessTokenError", error);
+
+    return {
+      ...token,
+      error: "RefreshAccessTokenError",
+    };
+  }
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
@@ -47,29 +87,60 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     signIn: "/login",
   },
   callbacks: {
-    async jwt({ token, user, account }) {
+    async jwt({ token, user, account, trigger, session }) {
       if (user && account) {
         token.id = user.id;
         token.provider = account.provider;
-        token.role = (user as Record<string, unknown>).role || "user";
+        token.role = user.role || "user";
         // Persist Google OAuth tokens for API calls
         if (account.provider === "google") {
           token.accessToken = account.access_token;
           token.refreshToken = account.refresh_token;
           token.expiresAt = account.expires_at;
         }
+
+        // Fetch user profile to check pdpa consent and role
+        try {
+          if (user.email) {
+            const { data } = await supabaseAdmin
+              .from("user_profiles")
+              .select("pdpa_consented, role")
+              .eq("user_id", user.email)
+              .single();
+            token.hasConsented = data?.pdpa_consented || false;
+            if (data?.role) {
+              token.role = data.role;
+            }
+          }
+        } catch {
+          token.hasConsented = false;
+        }
+      } else if (
+        token.expiresAt &&
+        Date.now() / 1000 > (token.expiresAt as number)
+      ) {
+        // Token has expired, try to refresh it
+        token = await refreshAccessToken(token);
       }
+
+      // Handle session update on the client
+      if (trigger === "update" && session?.hasConsented !== undefined) {
+        token.hasConsented = session.hasConsented;
+      }
+
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
-        (session.user as unknown as Record<string, unknown>).role =
-          token.role as string;
-        (session.user as unknown as Record<string, unknown>).accessToken =
-          token.accessToken as string;
-        (session.user as unknown as Record<string, unknown>).provider =
-          token.provider as string;
+        session.user.role = token.role as string;
+        session.user.accessToken = token.accessToken as string;
+        session.user.provider = token.provider as string;
+        session.user.hasConsented = token.hasConsented as boolean;
+
+        if (token.error) {
+          session.user.error = token.error as string;
+        }
       }
       return session;
     },
@@ -104,10 +175,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         return Response.redirect(new URL("/login", request.nextUrl));
       }
 
-      // RBAC: block non-super_admin from /dashboard/members
-      const role = (auth?.user as unknown as Record<string, unknown>)
-        ?.role as string;
-      if (pathname.startsWith("/dashboard/members") && role !== "super_admin") {
+      // Consent check
+      const hasConsented = auth?.user?.hasConsented;
+
+      if (!hasConsented && pathname !== "/consent") {
+        return Response.redirect(new URL("/consent", request.nextUrl));
+      }
+
+      // RBAC: block non-super_admin from restricted routes
+      const role = auth?.user?.role;
+      const isRestrictedRoute =
+        pathname.startsWith("/dashboard/members") ||
+        pathname.startsWith("/dashboard/chat");
+
+      if (isRestrictedRoute && role !== "super_admin") {
         return Response.redirect(new URL("/dashboard", request.nextUrl));
       }
 

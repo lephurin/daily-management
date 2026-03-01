@@ -2,10 +2,20 @@
 
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import Image from "next/image";
 import { Footer } from "@/components/footer";
 import { ThemeToggle } from "@/components/theme-toggle";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const navItems = [
   {
@@ -107,10 +117,19 @@ const navItems = [
 
 function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const isSuperAdmin = session?.user?.role === "super_admin";
+
+  const visibleItems = navItems.filter((item) => {
+    if (item.href === "/dashboard/chat" || item.href === "/dashboard/members") {
+      return isSuperAdmin;
+    }
+    return true;
+  });
 
   return (
     <nav className="space-y-1">
-      {navItems.map((item) => {
+      {visibleItems.map((item) => {
         const isActive =
           item.href === "/dashboard"
             ? pathname === "/dashboard"
@@ -141,6 +160,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const pathname = usePathname();
 
   // Derive page title from pathname
@@ -160,14 +180,16 @@ export default function DashboardLayout({
         <div className="mb-8 flex items-center gap-3">
           <Image src="/dm.png" alt="DM Logo" width={32} height={32} />
           <div>
-            <h2 className="text-lg font-bold tracking-tight">Daily Tracking</h2>
+            <h2 className="text-lg font-bold tracking-tight">
+              Daily Management
+            </h2>
             <p className="text-xs text-muted-foreground">Dashboard</p>
           </div>
         </div>
         <SidebarNav />
         <div className="mt-auto pt-4 border-t">
           <button
-            onClick={() => signOut({ redirectTo: "/login" })}
+            onClick={() => setLogoutConfirmOpen(true)}
             className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30"
           >
             <svg
@@ -203,7 +225,7 @@ export default function DashboardLayout({
                 <Image src="/dm.png" alt="DM Logo" width={28} height={28} />
                 <div>
                   <h2 className="text-lg font-bold tracking-tight">
-                    Daily Tracking
+                    Daily Management
                   </h2>
                   <p className="text-xs text-muted-foreground">Dashboard</p>
                 </div>
@@ -230,7 +252,7 @@ export default function DashboardLayout({
             <SidebarNav onNavigate={() => setMobileMenuOpen(false)} />
             <div className="mt-auto pt-4 border-t">
               <button
-                onClick={() => signOut({ redirectTo: "/login" })}
+                onClick={() => setLogoutConfirmOpen(true)}
                 className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30"
               >
                 <svg
@@ -289,6 +311,26 @@ export default function DashboardLayout({
         <main className="flex-1 p-4 sm:p-6">{children}</main>
         <Footer />
       </div>
+
+      <AlertDialog open={logoutConfirmOpen} onOpenChange={setLogoutConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>ยืนยันการออกจากระบบ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              คุณแน่ใจหรือไม่ว่าต้องการออกจากระบบในขณะนี้?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+              onClick={() => signOut({ redirectTo: "/login" })}
+            >
+              ออกจากระบบ
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

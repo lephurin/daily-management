@@ -138,11 +138,9 @@ export async function POST(req: Request) {
     },
   });
 
-  // Fallback to toTextStreamResponse if toDataStreamResponse doesn't exist at runtime,
-  // but we prefer toDataStreamResponse for tool call streaming compatibility
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const res: any = result;
-  return res.toDataStreamResponse
-    ? res.toDataStreamResponse()
-    : res.toTextStreamResponse();
+  // Note: Cast is used because of a type mismatch in the AI SDK version being used,
+  // but tool calls require the data stream response format.
+  return (
+    result as unknown as { toDataStreamResponse: () => Response }
+  ).toDataStreamResponse();
 }
