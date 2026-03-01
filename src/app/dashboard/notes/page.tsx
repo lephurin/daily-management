@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { TiptapEditor } from "@/features/daily-notes/components/tiptap-editor";
+import { NoteEditor } from "@/features/daily-notes/components/note-editor";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   useDailyNoteQuery,
@@ -51,9 +51,7 @@ export default function DailyNotesPage() {
   const saveNoteMutation = useSaveDailyNoteMutation();
 
   const historyNotes: DailyNote[] = historyData || [];
-  const existingContent = noteData?.content
-    ? JSON.stringify(noteData.content)
-    : undefined;
+  const existingContent = noteData?.content ? noteData.content : undefined;
 
   const handleSave = async (content: {
     json: Record<string, unknown>;
@@ -181,7 +179,7 @@ export default function DailyNotesPage() {
                 <Skeleton className="h-10 w-full" />
               </div>
             ) : (
-              <TiptapEditor
+              <NoteEditor
                 key={noteDate + (existingContent ? "hasContent" : "empty")}
                 content={existingContent}
                 editable={isEditing}

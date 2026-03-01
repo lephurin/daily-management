@@ -70,12 +70,12 @@
 
 ## Phase 6: Daily Notes & File Export
 
-- ติดตั้ง Tiptap Editor ใน `features/daily-notes`
+- ติดตั้ง Note Editor (BlockNote) ใน `features/daily-notes`
 - ผูกข้อมูลเข้ากับ Supabase `daily_notes` table
 - สร้าง Route Handler (`/api/export`)  
-  โดยใช้ไลบรารี `xlsx` (SheetJS) เพื่อ:
+  เพื่อส่งออกข้อมูลเป็นไฟล์ Excel:
   - ดึงข้อมูลรายวัน
-  - แปลงเป็น Excel buffer
+  - แปลงข้อมูล
   - ให้ผู้ใช้ดาวน์โหลดไฟล์
 
 ---

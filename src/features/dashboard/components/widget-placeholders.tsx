@@ -402,7 +402,7 @@ export function CalendarWidgetContent() {
         </div>
 
         {uniqueCalendars.length > 0 && (
-          <div className="flex items-center gap-1.5 px-1 mb-3 overflow-x-auto pb-1 scrollbar-none overflow-visible">
+          <div className="flex items-center gap-1.5 px-1 mb-3 pb-1 scrollbar-none overflow-visible">
             <div
               className="flex items-center justify-center text-muted-foreground shrink-0 mr-1 bg-secondary/30 rounded-full p-1.5"
               title="ตัวกรองปฏิทิน"
