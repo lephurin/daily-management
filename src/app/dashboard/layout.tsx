@@ -8,6 +8,7 @@ import Link from "next/link";
 import { Footer } from "@/components/footer";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useProfileQuery } from "@/features/dashboard/hooks/api-hooks";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -99,10 +100,13 @@ export default function DashboardLayout({
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const { data: session } = useSession();
   const pathname = usePathname();
+  const { data: profile } = useProfileQuery();
 
-  const userFallback = session?.user?.name
-    ? session.user.name.charAt(0).toUpperCase()
-    : "U";
+  const displayName = profile?.name || session?.user?.name || "User";
+  const displayAvatar = profile?.avatar_url || session?.user?.image || "";
+  const displayPosition = profile?.position || session?.user?.role || "Member";
+
+  const userFallback = displayName.charAt(0).toUpperCase();
 
   // Derive page title from pathname just in case for mobile
   const pageTitle = (() => {
@@ -152,20 +156,17 @@ export default function DashboardLayout({
               className="flex items-center gap-2 rounded-full p-1 pr-3 hover:bg-accent transition-all duration-300 border border-transparent hover:border-border"
             >
               <Avatar className="h-8 w-8 border border-primary/10 shadow-sm transition-transform hover:scale-105">
-                <AvatarImage
-                  src={session?.user?.image || ""}
-                  alt={session?.user?.name || "User"}
-                />
+                <AvatarImage src={displayAvatar} alt={displayName} />
                 <AvatarFallback className="bg-primary/5 text-primary text-xs font-semibold">
                   {userFallback}
                 </AvatarFallback>
               </Avatar>
               <div className="hidden sm:flex flex-col items-start leading-none">
                 <span className="text-sm font-medium text-foreground">
-                  {session?.user?.name || "User"}
+                  {displayName}
                 </span>
                 <span className="text-[10px] text-muted-foreground uppercase tracking-wider mt-1">
-                  {session?.user?.role || "Member"}
+                  {displayPosition}
                 </span>
               </div>
             </Link>
