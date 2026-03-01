@@ -90,17 +90,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async signIn({ user }) {
       if (user.email) {
         try {
-          // Ensure a profile exists in Supabase to have a stable UUID
-          const { error } = await supabaseAdmin.from("user_profiles").upsert(
-            {
+          // Check if profile already exists to prevent overwriting updated info with Google defaults
+          const { data: existingProfile } = await supabaseAdmin
+            .from("user_profiles")
+            .select("user_id")
+            .eq("user_id", user.email)
+            .maybeSingle();
+
+          if (!existingProfile) {
+            // Only create if it doesn't exist - this uses Google data as a default for first-time login
+            const { error } = await supabaseAdmin.from("user_profiles").insert({
               user_id: user.email,
               name: user.name || "",
               avatar_url: user.image || null,
-            },
-            { onConflict: "user_id" },
-          );
-          if (error)
-            console.error("Error ensuring user profile on signIn:", error);
+            });
+            if (error)
+              console.error("Error creating user profile on signIn:", error);
+          }
         } catch (err) {
           console.error("Failed to ensure user profile on signIn:", err);
         }
@@ -124,7 +130,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           if (user.email) {
             const { data } = await supabaseAdmin
               .from("user_profiles")
-              .select("id, pdpa_consented, role")
+              .select("id, pdpa_consented, role, name, avatar_url")
               .eq("user_id", user.email)
               .single();
 
@@ -134,6 +140,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               if (data.role) {
                 token.role = data.role;
               }
+              // Use stored profile data if available, otherwise stay with provider defaults
+              if (data.name) token.name = data.name;
+              if (data.avatar_url) token.picture = data.avatar_url;
             } else {
               token.hasConsented = false;
             }
@@ -159,6 +168,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
+        session.user.name = token.name as string;
+        session.user.image = token.picture as string;
         session.user.role = token.role as string;
         session.user.accessToken = token.accessToken as string;
         session.user.provider = token.provider as string;
