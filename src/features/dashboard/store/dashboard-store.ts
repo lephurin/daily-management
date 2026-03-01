@@ -37,6 +37,7 @@ interface DashboardStore {
   setWidgets: (widgets: WidgetConfig[]) => void;
   reorderWidgets: (activeId: string, overId: string) => void;
   toggleWidgetVisibility: (widgetId: string) => void;
+  toggleWidgetSize: (widgetId: string) => void;
 }
 
 export const useDashboardStore = create<DashboardStore>((set) => ({
@@ -62,6 +63,19 @@ export const useDashboardStore = create<DashboardStore>((set) => ({
     set((state) => ({
       widgets: state.widgets.map((w) =>
         w.id === widgetId ? { ...w, visible: !w.visible } : w,
+      ),
+    })),
+
+  toggleWidgetSize: (widgetId) =>
+    set((state) => ({
+      widgets: state.widgets.map((w) =>
+        w.id === widgetId
+          ? {
+              ...w,
+              size:
+                w.size === "medium" || w.size === "small" ? "large" : "medium",
+            }
+          : w,
       ),
     })),
 }));

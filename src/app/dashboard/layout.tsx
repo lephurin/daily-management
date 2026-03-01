@@ -4,8 +4,10 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import Image from "next/image";
+import Link from "next/link";
 import { Footer } from "@/components/footer";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,106 +18,40 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  LayoutDashboard,
+  FileText,
+  Bot,
+  Users,
+  LogOut,
+  Menu,
+  X,
+} from "lucide-react";
 
 const navItems = [
   {
     href: "/dashboard",
     label: "Dashboard",
-    icon: (
-      <svg
-        className="h-4 w-4"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
-        />
-      </svg>
-    ),
+    icon: <LayoutDashboard className="h-4 w-4" />,
   },
   {
     href: "/dashboard/notes",
     label: "Daily Notes",
-    icon: (
-      <svg
-        className="h-4 w-4"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-        />
-      </svg>
-    ),
-  },
-  {
-    href: "/dashboard/profile",
-    label: "Profile",
-    icon: (
-      <svg
-        className="h-4 w-4"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-        />
-      </svg>
-    ),
+    icon: <FileText className="h-4 w-4" />,
   },
   {
     href: "/dashboard/chat",
     label: "AI Chat",
-    icon: (
-      <svg
-        className="h-4 w-4"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-        />
-      </svg>
-    ),
+    icon: <Bot className="h-4 w-4" />,
   },
   {
     href: "/dashboard/members",
     label: "Members",
-    icon: (
-      <svg
-        className="h-4 w-4"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m3 5.197V21"
-        />
-      </svg>
-    ),
+    icon: <Users className="h-4 w-4" />,
   },
 ];
 
-function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
+function TopNavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const { data: session } = useSession();
   const isSuperAdmin = session?.user?.role === "super_admin";
@@ -128,26 +64,26 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   });
 
   return (
-    <nav className="space-y-1">
+    <nav className="flex flex-col lg:flex-row lg:items-center gap-1 lg:gap-2">
       {visibleItems.map((item) => {
         const isActive =
           item.href === "/dashboard"
             ? pathname === "/dashboard"
             : pathname.startsWith(item.href);
         return (
-          <a
+          <Link
             key={item.href}
             href={item.href}
             onClick={onNavigate}
-            className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+            className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all duration-300 ${
               isActive
-                ? "bg-accent text-foreground"
+                ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
                 : "text-muted-foreground hover:bg-accent hover:text-foreground"
             }`}
           >
             {item.icon}
             {item.label}
-          </a>
+          </Link>
         );
       })}
     </nav>
@@ -161,9 +97,14 @@ export default function DashboardLayout({
 }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+  const { data: session } = useSession();
   const pathname = usePathname();
 
-  // Derive page title from pathname
+  const userFallback = session?.user?.name
+    ? session.user.name.charAt(0).toUpperCase()
+    : "U";
+
+  // Derive page title from pathname just in case for mobile
   const pageTitle = (() => {
     if (pathname === "/dashboard") return "Dashboard";
     if (pathname.startsWith("/dashboard/notes")) return "Daily Notes";
@@ -174,156 +115,139 @@ export default function DashboardLayout({
   })();
 
   return (
-    <div className="flex min-h-screen bg-background">
-      {/* Desktop Sidebar */}
-      <aside className="hidden w-64 shrink-0 border-r bg-card lg:flex lg:flex-col lg:p-4">
-        <div className="mb-8 flex items-center gap-3">
-          <Image src="/dm.png" alt="DM Logo" width={32} height={32} />
-          <div>
-            <h2 className="text-lg font-bold tracking-tight">
-              Daily Management
-            </h2>
-            <p className="text-xs text-muted-foreground">Dashboard</p>
+    <div className="flex min-h-screen flex-col bg-[#fdfdfd] dark:bg-background/95">
+      {/* Top Navbar */}
+      <header className="sticky top-0 z-40 w-full border-b bg-white/70 dark:bg-background/70 backdrop-blur-xl supports-backdrop-filter:bg-white/60">
+        <div className="flex h-16 items-center px-4 md:px-6 w-full justify-between">
+          <div className="flex items-center gap-4 lg:gap-8">
+            <Link href="/dashboard" className="flex items-center gap-3 group">
+              <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary transition-transform group-hover:scale-105">
+                <Image
+                  src="/dm.png"
+                  alt="DM Logo"
+                  width={24}
+                  height={24}
+                  className="object-contain drop-shadow-sm"
+                />
+              </div>
+              <span className="hidden font-bold tracking-tight md:inline-block text-lg bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/80">
+                Daily Management
+              </span>
+            </Link>
+
+            {/* Desktop Nav */}
+            <div className="hidden lg:flex items-center">
+              <TopNavLinks />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-4">
+            <ThemeToggle />
+
+            <div className="h-6 w-px bg-border mx-1 hidden sm:block"></div>
+
+            {/* Profile Route */}
+            <Link
+              href="/dashboard/profile"
+              className="flex items-center gap-2 rounded-full p-1 pr-3 hover:bg-accent transition-all duration-300 border border-transparent hover:border-border"
+            >
+              <Avatar className="h-8 w-8 border border-primary/10 shadow-sm transition-transform hover:scale-105">
+                <AvatarImage
+                  src={session?.user?.image || ""}
+                  alt={session?.user?.name || "User"}
+                />
+                <AvatarFallback className="bg-primary/5 text-primary text-xs font-semibold">
+                  {userFallback}
+                </AvatarFallback>
+              </Avatar>
+              <div className="hidden sm:flex flex-col items-start leading-none">
+                <span className="text-sm font-medium text-foreground">
+                  {session?.user?.name || "User"}
+                </span>
+                <span className="text-[10px] text-muted-foreground uppercase tracking-wider mt-1">
+                  {session?.user?.role || "Member"}
+                </span>
+              </div>
+            </Link>
+
+            {/* Logout Button */}
+            <button
+              onClick={() => setLogoutConfirmOpen(true)}
+              className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30 transition-colors"
+              title="Logout"
+            >
+              <LogOut className="h-5 w-5" />
+            </button>
+
+            {/* Mobile Menu Toggle */}
+            <button
+              className="ml-1 flex h-9 w-9 items-center justify-center rounded-md hover:bg-accent lg:hidden"
+              onClick={() => setMobileMenuOpen(true)}
+            >
+              <Menu className="h-5 w-5" />
+            </button>
           </div>
         </div>
-        <SidebarNav />
-        <div className="mt-auto pt-4 border-t">
-          <button
-            onClick={() => setLogoutConfirmOpen(true)}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30"
-          >
-            <svg
-              className="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-              />
-            </svg>
-            Log Out
-          </button>
-        </div>
-      </aside>
+      </header>
 
-      {/* Mobile Overlay */}
+      {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 lg:hidden"
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm lg:hidden animate-in fade-in duration-200"
           onClick={() => setMobileMenuOpen(false)}
         >
           <aside
-            className="flex h-full w-64 flex-col bg-card p-4 shadow-xl"
+            className="absolute top-0 right-0 flex h-full w-3/4 max-w-sm flex-col bg-background p-6 shadow-2xl animate-in slide-in-from-right-full duration-300"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="mb-6 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Image src="/dm.png" alt="DM Logo" width={28} height={28} />
-                <div>
-                  <h2 className="text-lg font-bold tracking-tight">
-                    Daily Management
-                  </h2>
-                  <p className="text-xs text-muted-foreground">Dashboard</p>
-                </div>
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex flex-col">
+                <span className="font-bold text-lg">Menu</span>
+                <span className="text-sm text-muted-foreground">
+                  {pageTitle}
+                </span>
               </div>
               <button
                 onClick={() => setMobileMenuOpen(false)}
-                className="rounded-md p-1 hover:bg-accent"
+                className="rounded-full p-2 hover:bg-accent transition-colors"
               >
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
+                <X className="h-5 w-5" />
               </button>
             </div>
-            <SidebarNav onNavigate={() => setMobileMenuOpen(false)} />
-            <div className="mt-auto pt-4 border-t">
-              <button
-                onClick={() => setLogoutConfirmOpen(true)}
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30"
-              >
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                  />
-                </svg>
-                Log Out
-              </button>
+            <div className="mb-4">
+              <TopNavLinks onNavigate={() => setMobileMenuOpen(false)} />
             </div>
           </aside>
         </div>
       )}
 
       {/* Main Content */}
-      <div className="flex flex-1 flex-col overflow-auto">
-        <header className="sticky top-0 z-40 border-b bg-background/95 px-4 py-4 backdrop-blur supports-backdrop-filter:bg-background/60 sm:px-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {/* Hamburger button — shown on small screens */}
-              <button
-                className="rounded-md p-1.5 hover:bg-accent lg:hidden"
-                onClick={() => setMobileMenuOpen(true)}
-                aria-label="Open menu"
-              >
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
-                </svg>
-              </button>
-              <h1 className="text-xl font-semibold">{pageTitle}</h1>
-            </div>
-            <div className="flex items-center gap-2">
-              <ThemeToggle />
-            </div>
-          </div>
-        </header>
+      <main className="flex-1 w-full p-4 sm:p-6 lg:p-8 animate-in fade-in duration-500">
+        <div className="mx-auto w-full max-w-screen-2xl">{children}</div>
+      </main>
 
-        <main className="flex-1 p-4 sm:p-6">{children}</main>
-        <Footer />
+      <div className="w-full">
+        <div className="mx-auto w-full max-w-screen-2xl">
+          <Footer />
+        </div>
       </div>
 
       <AlertDialog open={logoutConfirmOpen} onOpenChange={setLogoutConfirmOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-2xl sm:max-w-[425px]">
           <AlertDialogHeader>
-            <AlertDialogTitle>ยืนยันการออกจากระบบ?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-xl font-semibold">
+              ยืนยันการออกจากระบบ?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-base text-muted-foreground">
               คุณแน่ใจหรือไม่ว่าต้องการออกจากระบบในขณะนี้?
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+          <AlertDialogFooter className="mt-6 sm:space-x-4">
+            <AlertDialogCancel className="w-full sm:w-auto rounded-xl border-border hover:bg-accent">
+              ยกเลิก
+            </AlertDialogCancel>
             <AlertDialogAction
-              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+              className="w-full sm:w-auto rounded-xl bg-red-600 hover:bg-red-700 focus:ring-red-600 shadow-md shadow-red-500/20 text-white"
               onClick={() => signOut({ redirectTo: "/login" })}
             >
               ออกจากระบบ

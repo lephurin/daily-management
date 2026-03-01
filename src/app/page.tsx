@@ -9,7 +9,7 @@ export default function Home() {
       <main className="flex flex-1 flex-col items-center justify-center px-6 py-20">
         <Image
           className="mb-8 dark:invert"
-          src="/dm.png"
+          src="/dms.png"
           alt="Daily Management logo"
           width={80}
           height={80}

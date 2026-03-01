@@ -5,44 +5,14 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { useState, useEffect } from "react";
 import dayjs from "dayjs";
-
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  rectSortingStrategy,
-} from "@dnd-kit/sortable";
 import { useDashboardStore } from "@/features/dashboard/store/dashboard-store";
-import { SortableWidget } from "./sortable-widget";
+import { DashboardWidget } from "./dashboard-widget";
+import { ManageWidgetsPanel } from "./manage-widgets-panel";
 import {
   JiraWidgetPlaceholder,
   CalendarWidgetContent,
   GmailWidgetContent,
 } from "./widget-placeholders";
-import { motion } from "framer-motion";
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 },
-};
 
 const widgetContentMap: Record<string, React.ComponentType> = {
   "jira-widget": JiraWidgetPlaceholder,
@@ -51,7 +21,7 @@ const widgetContentMap: Record<string, React.ComponentType> = {
 };
 
 export function DashboardGrid() {
-  const { widgets, reorderWidgets } = useDashboardStore();
+  const { widgets } = useDashboardStore();
   const visibleWidgets = widgets.filter((w) => w.visible);
 
   const queryClient = useQueryClient();
@@ -60,7 +30,6 @@ export function DashboardGrid() {
 
   useEffect(() => {
     // Set initial load time on client-side to prevent hydration mismatch
-    // Deferred to avoid cascading renders warning from React Compiler.
     const timer = setTimeout(() => {
       setLastUpdated(new Date());
     }, 0);
@@ -72,10 +41,7 @@ export function DashboardGrid() {
     setIsReloading(true);
 
     try {
-      // Invalidate all queries so widgets fetch fresh data
       await queryClient.invalidateQueries();
-
-      // Check if there are any real network/server errors (ignoring unconfigured auth errors)
       const activeQueries = queryClient
         .getQueryCache()
         .getAll()
@@ -96,83 +62,51 @@ export function DashboardGrid() {
         setLastUpdated("failed");
       }
     } finally {
-      // Add a small delay for visual feedback, then stop spinning
       setTimeout(() => {
         setIsReloading(false);
       }, 500);
     }
   };
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 8 },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  );
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (over && active.id !== over.id) {
-      reorderWidgets(active.id as string, over.id as string);
-    }
-  };
-
   return (
     <div className="space-y-4">
-      <div className="flex justify-end items-center gap-3">
-        {lastUpdated === "failed" ? (
-          <span className="text-xs text-red-500 animate-in fade-in duration-500 font-medium">
-            โหลดข้อมูลล่าสุดไม่สำเร็จ
-          </span>
-        ) : lastUpdated ? (
-          <span className="text-xs text-muted-foreground animate-in fade-in duration-500">
-            อัปเดตล่าสุด: {dayjs(lastUpdated).format("MMMM D, YYYY HH:mm")}
-          </span>
-        ) : null}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleManualReload}
-          disabled={isReloading}
-          className="gap-2"
-        >
-          <RefreshCw
-            className={`h-4 w-4 ${isReloading ? "animate-spin" : ""}`}
-          />
-          {isReloading ? "กำลังโหลด..." : "โหลดข้อมูลใหม่"}
-        </Button>
+      <div className="flex justify-between items-center bg-card p-3 rounded-lg border shadow-sm">
+        <ManageWidgetsPanel />
+        <div className="flex items-center gap-3">
+          {lastUpdated === "failed" ? (
+            <span className="text-xs text-destructive animate-in fade-in duration-500 font-medium">
+              โหลดข้อมูลล่าสุดไม่สำเร็จ
+            </span>
+          ) : lastUpdated ? (
+            <span className="text-xs text-muted-foreground animate-in fade-in duration-500">
+              อัปเดตล่าสุด: {dayjs(lastUpdated).format("MMMM D, YYYY HH:mm")}
+            </span>
+          ) : null}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleManualReload}
+            disabled={isReloading}
+            className="gap-2"
+          >
+            <RefreshCw
+              className={`h-4 w-4 ${isReloading ? "animate-spin" : ""}`}
+            />
+            {isReloading ? "กำลังโหลด..." : "โหลดข้อมูลใหม่"}
+          </Button>
+        </div>
       </div>
 
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
-      >
-        <SortableContext
-          items={visibleWidgets.map((w) => w.id)}
-          strategy={rectSortingStrategy}
-        >
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="grid grid-cols-1 gap-4 md:grid-cols-2"
-          >
-            {visibleWidgets.map((widget) => {
-              const Content = widgetContentMap[widget.id];
-              return (
-                <motion.div variants={itemVariants} key={widget.id}>
-                  <SortableWidget widget={widget}>
-                    {Content ? <Content /> : null}
-                  </SortableWidget>
-                </motion.div>
-              );
-            })}
-          </motion.div>
-        </SortableContext>
-      </DndContext>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 grid-flow-dense pb-8">
+        {visibleWidgets.map((widget) => {
+          const Content = widgetContentMap[widget.id];
+          return (
+            <DashboardWidget key={widget.id} widget={widget}>
+              {Content ? <Content /> : null}
+            </DashboardWidget>
+          );
+        })}
+      </div>
     </div>
   );
 }

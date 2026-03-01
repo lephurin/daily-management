@@ -11,7 +11,15 @@ import {
   useGmailQuery,
   useJiraActiveSprintQuery,
 } from "@/features/dashboard/hooks/api-hooks";
-import { Settings, Search } from "lucide-react";
+import {
+  Settings,
+  Search,
+  Calendar,
+  Check,
+  ExternalLink,
+  Mail,
+  Ghost,
+} from "lucide-react";
 import dayjs from "dayjs";
 import { useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
@@ -94,19 +102,7 @@ export function JiraWidgetPlaceholder() {
         className="flex min-h-[200px] flex-col items-center justify-center gap-3 text-center"
       >
         <div className="rounded-full bg-blue-100 p-3 dark:bg-blue-900/30">
-          <svg
-            className="h-8 w-8 text-blue-600 dark:text-blue-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-            />
-          </svg>
+          <Ghost className="h-8 w-8 text-blue-600 dark:text-blue-400" />
         </div>
         <p className="text-sm text-muted-foreground">Jira ยังไม่ได้เชื่อมต่อ</p>
         <JiraCredentialDialog />
@@ -274,19 +270,7 @@ export function CalendarWidgetContent() {
         className="flex min-h-[200px] flex-col items-center justify-center gap-3 text-center"
       >
         <div className="rounded-full bg-green-100 p-3 dark:bg-green-900/30">
-          <svg
-            className="h-8 w-8 text-green-600 dark:text-green-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-            />
-          </svg>
+          <Calendar className="h-8 w-8 text-green-600 dark:text-green-400" />
         </div>
         <p className="text-sm text-muted-foreground">
           ลงชื่อเข้าใช้ด้วย Google เพื่อดูปฏิทิน
@@ -346,19 +330,7 @@ export function CalendarWidgetContent() {
         className="flex min-h-[200px] flex-col items-center justify-center gap-2 text-center"
       >
         <div className="rounded-full bg-green-100 p-3 dark:bg-green-900/30">
-          <svg
-            className="h-8 w-8 text-green-600 dark:text-green-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M5 13l4 4L19 7"
-            />
-          </svg>
+          <Check className="h-8 w-8 text-green-600 dark:text-green-400" />
         </div>
         <p className="text-sm text-muted-foreground">ไม่มีนัดหมายวันนี้ 🎉</p>
       </motion.div>
@@ -407,19 +379,7 @@ export function CalendarWidgetContent() {
                   </p>
                 )}
               </div>
-              <svg
-                className="h-4 w-4 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity mt-0.5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                />
-              </svg>
+              <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity mt-0.5" />
             </motion.a>
           );
         })}
@@ -465,19 +425,7 @@ export function GmailWidgetContent() {
         className="flex min-h-[200px] flex-col items-center justify-center gap-3 text-center"
       >
         <div className="rounded-full bg-red-100 p-3 dark:bg-red-900/30">
-          <svg
-            className="h-8 w-8 text-red-500 dark:text-red-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-            />
-          </svg>
+          <Mail className="h-8 w-8 text-red-500 dark:text-red-400" />
         </div>
         <p className="text-sm text-muted-foreground">
           ลงชื่อเข้าใช้ด้วย Google เพื่อดูอีเมล
