@@ -19,6 +19,7 @@ import {
   ExternalLink,
   Mail,
   Ghost,
+  Filter,
 } from "lucide-react";
 import dayjs from "dayjs";
 import { useState, useMemo } from "react";
@@ -257,6 +258,46 @@ export function CalendarWidgetContent() {
     error,
   } = useCalendarQuery(isGoogleUser);
 
+  const todayEvents = useMemo(() => {
+    const todayStart = dayjs().startOf("day").valueOf();
+    const todayEnd = dayjs().endOf("day").valueOf();
+
+    return events.filter((event) => {
+      if (!event.start) return false;
+      const tStart = dayjs(event.start).valueOf();
+      const tEnd = event.end ? dayjs(event.end).valueOf() : tStart;
+
+      return tStart <= todayEnd && tEnd >= todayStart;
+    });
+  }, [events]);
+
+  const uniqueCalendars = useMemo(() => {
+    const map = new Map<string, string>();
+    events.forEach((e) => {
+      if (e.calendarName) {
+        map.set(e.calendarName, e.color || "#ccc");
+      }
+    });
+    return Array.from(map.entries()).map(([name, color]) => ({ name, color }));
+  }, [events]);
+
+  const [selectedCalendars, setSelectedCalendars] = useState<string[]>([]);
+
+  const toggleCalendar = (calName: string) => {
+    setSelectedCalendars((prev) =>
+      prev.includes(calName)
+        ? prev.filter((name) => name !== calName)
+        : [...prev, calName],
+    );
+  };
+
+  const filteredTodayEvents = useMemo(() => {
+    if (selectedCalendars.length === 0) return todayEvents;
+    return todayEvents.filter(
+      (e) => e.calendarName && selectedCalendars.includes(e.calendarName),
+    );
+  }, [todayEvents, selectedCalendars]);
+
   let content;
 
   if (!isGoogleUser) {
@@ -308,7 +349,7 @@ export function CalendarWidgetContent() {
         transition={{ duration: 0.2 }}
         className="flex min-h-[200px] flex-col items-center justify-center gap-2 text-center"
       >
-        <p className="text-sm text-red-500">{error.message}</p>
+        <p className="text-sm text-red-500">{error?.message}</p>
         <Button
           variant="outline"
           size="sm"
@@ -319,7 +360,7 @@ export function CalendarWidgetContent() {
         </Button>
       </motion.div>
     );
-  } else if (events.length === 0) {
+  } else if (todayEvents.length === 0) {
     content = (
       <motion.div
         key="empty"
@@ -345,44 +386,130 @@ export function CalendarWidgetContent() {
         exit={{ opacity: 0 }}
         className="space-y-2 p-1"
       >
-        {events.map((event) => {
-          const start = event.start ? dayjs(event.start).format("HH:mm") : "";
-          const end = event.end ? dayjs(event.end).format("HH:mm") : "";
+        <div className="flex items-center gap-4 px-2 pb-2 text-[10px] text-muted-foreground border-b border-border/50 mb-2">
+          <div className="flex items-center gap-1.5">
+            <div className="h-1.5 w-1.5 rounded-full bg-gray-400" />
+            <span>ผ่านมาแล้ว</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
+            <span>กำลังถึง/ดำเนินการ</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+            <span>ยังไม่ถึง</span>
+          </div>
+        </div>
 
-          return (
-            <motion.a
-              variants={itemVariants}
-              initial="hidden"
-              animate="visible"
-              layout
-              key={event.id}
-              href={
-                event.htmlLink ||
-                `https://calendar.google.com/calendar/r/eventedit/${event.id}`
-              }
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-start gap-3 rounded-lg border p-3 transition-colors hover:bg-accent/50 cursor-pointer group"
+        {uniqueCalendars.length > 0 && (
+          <div className="flex items-center gap-1.5 px-1 mb-3 overflow-x-auto pb-1 scrollbar-none overflow-visible">
+            <div
+              className="flex items-center justify-center text-muted-foreground shrink-0 mr-1 bg-secondary/30 rounded-full p-1.5"
+              title="ตัวกรองปฏิทิน"
             >
-              <div className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-green-500" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
-                  {event.title?.trim() || "(ไม่มีชื่อ)"}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {start || "00:00"}
-                  {end && end !== start ? ` – ${end}` : ""}
-                </p>
-                {event.location && (
-                  <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                    📍 {event.location}
+              <Filter className="h-3 w-3" />
+            </div>
+            {uniqueCalendars.map((cal) => {
+              const isSelected = selectedCalendars.includes(cal.name);
+              return (
+                <button
+                  key={cal.name}
+                  onClick={() => toggleCalendar(cal.name)}
+                  className={`shrink-0 text-[10px] px-2.5 py-1 rounded-full border transition-all hover:-translate-y-0.5 hover:shadow-sm active:scale-95 ${
+                    isSelected
+                      ? "shadow-sm font-medium"
+                      : "bg-secondary/20 border-border/60 text-muted-foreground hover:bg-secondary/60 hover:text-foreground hover:border-border"
+                  }`}
+                  style={
+                    isSelected
+                      ? {
+                          borderColor: cal.color,
+                          color: cal.color,
+                          backgroundColor: `${cal.color}1A`,
+                        }
+                      : {}
+                  }
+                >
+                  {cal.name}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {filteredTodayEvents.length === 0 && (
+          <p className="text-sm text-muted-foreground text-center py-4">
+            ไม่มีนัดหมายในปฏิทินที่เลือก
+          </p>
+        )}
+
+        <div className="space-y-2 max-h-[350px] overflow-y-auto pr-1">
+          {filteredTodayEvents.map((event) => {
+            const start = event.start ? dayjs(event.start).format("HH:mm") : "";
+            const end = event.end ? dayjs(event.end).format("HH:mm") : "";
+
+            const nowMs = dayjs().valueOf();
+            const startMs = dayjs(event.start).valueOf();
+            const endMs = event.end ? dayjs(event.end).valueOf() : startMs;
+
+            let dotColor = "bg-blue-500";
+            if (endMs < nowMs) {
+              dotColor = "bg-gray-400";
+            } else if (startMs <= nowMs && nowMs <= endMs) {
+              dotColor = "bg-green-500";
+            }
+
+            return (
+              <motion.a
+                variants={itemVariants}
+                initial="hidden"
+                animate="visible"
+                layout
+                key={event.id}
+                href={
+                  event.htmlLink ||
+                  `https://calendar.google.com/calendar/r/eventedit/${event.id}`
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 rounded-lg border p-3 transition-colors hover:bg-accent/50 cursor-pointer group"
+              >
+                <div className={`h-2 w-2 shrink-0 rounded-full ${dotColor}`} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium transition-colors">
+                    {event.title?.trim() || "(ไม่มีชื่อ)"}
                   </p>
-                )}
-              </div>
-              <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity mt-0.5" />
-            </motion.a>
-          );
-        })}
+                  {event.calendarName && (
+                    <div className="mt-1 flex items-center">
+                      <span
+                        className="text-[10px] px-1.5 py-0.5 rounded border"
+                        style={{
+                          borderColor: event.color || "var(--border)",
+                          color: event.color || "var(--muted-foreground)",
+                          backgroundColor: event.color
+                            ? `${event.color}1A`
+                            : "transparent",
+                        }}
+                      >
+                        {event.calendarName}
+                      </span>
+                    </div>
+                  )}
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {start || "00:00"}
+                    {end && end !== start ? ` – ${end}` : ""}
+                  </p>
+                  {event.location && (
+                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                      📍 {event.location}
+                    </p>
+                  )}
+                </div>
+                <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+              </motion.a>
+            );
+          })}
+        </div>
       </motion.div>
     );
   }
@@ -463,7 +590,7 @@ export function GmailWidgetContent() {
         transition={{ duration: 0.2 }}
         className="flex min-h-[200px] flex-col items-center justify-center gap-2 text-center"
       >
-        <p className="text-sm text-red-500">{error.message}</p>
+        <p className="text-sm text-red-500">{error?.message}</p>
         <Button
           variant="outline"
           size="sm"

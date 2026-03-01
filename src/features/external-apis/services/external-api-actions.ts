@@ -8,6 +8,7 @@ import type {
   GmailMessage,
   JiraBoardSprintResponse,
   JiraSprintIssuesResponse,
+  GoogleCalendarListResponse,
   GoogleCalendarEventsResponse,
   GmailListResponse,
   GmailMessageDetailResponse,
@@ -96,43 +97,86 @@ export async function fetchGoogleCalendarEvents(): Promise<CalendarEvent[]> {
     }
 
     const now = new Date();
-    // Use a wider range (+/- 12 hours) to handle timezone differences between server and client
+    // Use a wider range (+/- 48 hours) to safely include all events for the entire day across timezones
     const startRange = new Date(
-      now.getTime() - 12 * 60 * 60 * 1000,
+      now.getTime() - 48 * 60 * 60 * 1000,
     ).toISOString();
     const endRange = new Date(
-      now.getTime() + 36 * 60 * 60 * 1000,
+      now.getTime() + 48 * 60 * 60 * 1000,
     ).toISOString();
 
-    const res = (await axios.get<GoogleCalendarEventsResponse>(
-      `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${startRange}&timeMax=${endRange}&singleEvents=true&orderBy=startTime`,
+    // 1. Fetch Calendar List
+    const calendarsRes = (await axios.get<GoogleCalendarListResponse>(
+      "https://www.googleapis.com/calendar/v3/users/me/calendarList",
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
       },
-    )) as unknown as GoogleCalendarEventsResponse;
+    )) as unknown as GoogleCalendarListResponse;
 
-    return (res?.items || []).map((event) => {
-      const title = event.summary?.trim() || "";
-      let fallbackTitle = "(ไม่มีชื่อ)";
-      if (event.hangoutLink) fallbackTitle = "Google Meet";
+    const calendars = calendarsRes?.items || [];
+    // Filter for user-selected calendars, fallback to primary if empty
+    const targetCalendars = calendars.filter((c) => c.selected || c.primary);
 
-      // Final fallback if everything is empty
-      const finalTitle = title || fallbackTitle;
+    if (targetCalendars.length === 0) return [];
 
-      return {
-        id: event.id,
-        title: finalTitle,
-        start: event.start?.dateTime || event.start?.date || "",
-        end: event.end?.dateTime || event.end?.date || "",
-        location: event.location,
-        description: event.description,
-        organizer: event.organizer?.email,
-        htmlLink: event.hangoutLink || event.htmlLink,
-      };
+    // 2. Fetch events concurrently from selected calendars
+    const eventsProms = targetCalendars.map(async (calendar) => {
+      try {
+        const eventsRes = (await axios.get<GoogleCalendarEventsResponse>(
+          `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendar.id)}/events?timeMin=${startRange}&timeMax=${endRange}&singleEvents=true&orderBy=startTime`,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+            },
+          },
+        )) as unknown as GoogleCalendarEventsResponse;
+
+        return (eventsRes?.items || []).map((event) => {
+          const title = event.summary?.trim() || "";
+          let fallbackTitle = "(ไม่มีชื่อ)";
+          if (event.hangoutLink) fallbackTitle = "Google Meet";
+
+          const finalTitle = title || fallbackTitle;
+
+          return {
+            id: event.id + "_" + calendar.id,
+            title: finalTitle,
+            start: event.start?.dateTime || event.start?.date || "",
+            end: event.end?.dateTime || event.end?.date || "",
+            location: event.location,
+            description: event.description,
+            organizer: event.organizer?.email,
+            htmlLink: event.hangoutLink || event.htmlLink,
+            calendarName: calendar.summary,
+            color: calendar.backgroundColor || "#000000",
+          };
+        });
+      } catch (err) {
+        console.error(
+          `Failed to fetch events for calendar ${calendar.id}:`,
+          err,
+        );
+        return [];
+      }
     });
+
+    const allEventsArrays = await Promise.all(eventsProms);
+    const flattenedEvents = allEventsArrays.flat();
+
+    // 3. Sort chronologically
+    flattenedEvents.sort((a, b) => {
+      if (!a.start) return 1;
+      if (!b.start) return -1;
+      const startA = new Date(a.start).getTime();
+      const startB = new Date(b.start).getTime();
+      return startA - startB;
+    });
+
+    return flattenedEvents;
   } catch (error) {
     console.error("Failed to fetch calendar events:", error);
     return [];

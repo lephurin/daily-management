@@ -44,6 +44,8 @@ export interface CalendarEvent {
   description?: string;
   organizer?: string;
   htmlLink?: string;
+  calendarName?: string;
+  color?: string;
 }
 
 export interface GmailMessage {
@@ -78,6 +80,16 @@ export interface JiraSprintIssuesResponse {
       priority: { name: string | null } | null;
       updated: string;
     };
+  }[];
+}
+
+export interface GoogleCalendarListResponse {
+  items: {
+    id: string;
+    summary: string;
+    backgroundColor?: string;
+    primary?: boolean;
+    selected?: boolean;
   }[];
 }
 

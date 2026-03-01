@@ -20,6 +20,7 @@ import { useState, useEffect, ReactNode } from "react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
+import { ExternalLink } from "lucide-react";
 
 const jiraSchema = z.object({
   baseUrl: z
@@ -139,7 +140,18 @@ export function JiraCredentialDialog({ trigger }: { trigger?: ReactNode }) {
             )}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="jira-token">API Token</Label>
+            <div className="flex items-center gap-1.5">
+              <Label htmlFor="jira-token">API Token</Label>
+              <a
+                href="https://id.atlassian.com/manage-profile/security/api-tokens"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="รับ API Token"
+                className="text-blue-500 hover:text-blue-600 transition-colors"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+            </div>
             <Input
               id="jira-token"
               type="password"
