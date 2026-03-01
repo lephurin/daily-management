@@ -148,48 +148,70 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       const isLoggedIn = !!auth?.user;
       const { pathname } = request.nextUrl;
 
+      // Extract locale from pathname if present
+      const localeMatch = pathname.match(/^\/(en|th)(\/|$)/);
+      const locale = localeMatch ? localeMatch[1] : "";
+      const pathWithoutLocale = locale
+        ? pathname.replace(`/${locale}`, "") || "/"
+        : pathname;
+
       // Public routes that don't require auth
-      const publicRoutes = ["/login", "/consent", "/api/auth"];
-      const isPublicRoute = publicRoutes.some((route) =>
-        pathname.startsWith(route),
+      const publicRoutes = [
+        "/login",
+        "/consent",
+        "/api/auth",
+        "/privacy-policy",
+        "/",
+      ];
+      const isPublicRoute = publicRoutes.some(
+        (route) =>
+          pathWithoutLocale === route ||
+          pathWithoutLocale.startsWith("/api/auth") ||
+          pathWithoutLocale === "/privacy-policy",
       );
 
       // If on public route and logged in, redirect /login → /dashboard
       if (isPublicRoute) {
-        if (isLoggedIn && pathname === "/login") {
-          return Response.redirect(new URL("/dashboard", request.nextUrl));
+        if (isLoggedIn && pathWithoutLocale === "/login") {
+          return Response.redirect(
+            new URL(
+              locale ? `/${locale}/dashboard` : "/dashboard",
+              request.nextUrl,
+            ),
+          );
         }
         return true;
       }
 
-      // Root path: redirect to /dashboard if logged in, /login if not
-      if (pathname === "/") {
-        if (isLoggedIn) {
-          return Response.redirect(new URL("/dashboard", request.nextUrl));
-        }
-        return Response.redirect(new URL("/login", request.nextUrl));
-      }
-
       // All other routes require authentication
       if (!isLoggedIn) {
-        return Response.redirect(new URL("/login", request.nextUrl));
+        return Response.redirect(
+          new URL(locale ? `/${locale}/login` : "/login", request.nextUrl),
+        );
       }
 
       // Consent check
       const hasConsented = auth?.user?.hasConsented;
 
-      if (!hasConsented && pathname !== "/consent") {
-        return Response.redirect(new URL("/consent", request.nextUrl));
+      if (!hasConsented && pathWithoutLocale !== "/consent") {
+        return Response.redirect(
+          new URL(locale ? `/${locale}/consent` : "/consent", request.nextUrl),
+        );
       }
 
       // RBAC: block non-super_admin from restricted routes
       const role = auth?.user?.role;
       const isRestrictedRoute =
-        pathname.startsWith("/dashboard/members") ||
-        pathname.startsWith("/dashboard/chat");
+        pathWithoutLocale.startsWith("/dashboard/members") ||
+        pathWithoutLocale.startsWith("/dashboard/chat");
 
       if (isRestrictedRoute && role !== "super_admin") {
-        return Response.redirect(new URL("/dashboard", request.nextUrl));
+        return Response.redirect(
+          new URL(
+            locale ? `/${locale}/dashboard` : "/dashboard",
+            request.nextUrl,
+          ),
+        );
       }
 
       return true;

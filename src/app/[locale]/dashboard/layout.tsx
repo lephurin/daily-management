@@ -4,9 +4,11 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import Image from "next/image";
-import Link from "next/link";
+import { Link as LocalizedLink } from "@/i18n/routing";
 import { Footer } from "@/components/footer";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { useTranslations } from "next-intl";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useProfileQuery } from "@/features/dashboard/hooks/api-hooks";
 import {
@@ -29,33 +31,35 @@ import {
   X,
 } from "lucide-react";
 
-const navItems = [
+const getNavItems = (t: (key: string) => string) => [
   {
     href: "/dashboard",
-    label: "Dashboard",
+    label: t("title"),
     icon: <LayoutDashboard className="h-4 w-4" />,
   },
   {
     href: "/dashboard/notes",
-    label: "Daily Notes",
+    label: t("notes"),
     icon: <FileText className="h-4 w-4" />,
   },
   {
     href: "/dashboard/chat",
-    label: "AI Chat",
+    label: t("chat"),
     icon: <Bot className="h-4 w-4" />,
   },
   {
     href: "/dashboard/members",
-    label: "Members",
+    label: t("members"),
     icon: <Users className="h-4 w-4" />,
   },
 ];
 
 function TopNavLinks({ onNavigate }: { onNavigate?: () => void }) {
+  const t = useTranslations("Dashboard");
   const pathname = usePathname();
   const { data: session } = useSession();
   const isSuperAdmin = session?.user?.role === "super_admin";
+  const navItems = getNavItems(t);
 
   const visibleItems = navItems.filter((item) => {
     if (item.href === "/dashboard/chat" || item.href === "/dashboard/members") {
@@ -69,10 +73,12 @@ function TopNavLinks({ onNavigate }: { onNavigate?: () => void }) {
       {visibleItems.map((item) => {
         const isActive =
           item.href === "/dashboard"
-            ? pathname === "/dashboard"
-            : pathname.startsWith(item.href);
+            ? pathname === "/dashboard" ||
+              pathname === "/en/dashboard" ||
+              pathname === "/th/dashboard"
+            : pathname.includes(item.href);
         return (
-          <Link
+          <LocalizedLink
             key={item.href}
             href={item.href}
             onClick={onNavigate}
@@ -84,7 +90,7 @@ function TopNavLinks({ onNavigate }: { onNavigate?: () => void }) {
           >
             {item.icon}
             {item.label}
-          </Link>
+          </LocalizedLink>
         );
       })}
     </nav>
@@ -96,6 +102,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const t = useTranslations("Dashboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const { data: session } = useSession();
@@ -110,12 +117,12 @@ export default function DashboardLayout({
 
   // Derive page title from pathname just in case for mobile
   const pageTitle = (() => {
-    if (pathname === "/dashboard") return "Dashboard";
-    if (pathname.startsWith("/dashboard/notes")) return "Daily Notes";
-    if (pathname.startsWith("/dashboard/chat")) return "AI Chat";
-    if (pathname.startsWith("/dashboard/profile")) return "Profile";
-    if (pathname.startsWith("/dashboard/members")) return "Members";
-    return "Dashboard";
+    if (pathname.includes("/dashboard/notes")) return t("notes");
+    if (pathname.includes("/dashboard/chat")) return t("chat");
+    if (pathname.includes("/dashboard/profile")) return t("profile");
+    if (pathname.includes("/dashboard/members")) return t("members");
+    if (pathname.includes("/dashboard")) return t("title");
+    return t("title");
   })();
 
   return (
@@ -124,7 +131,10 @@ export default function DashboardLayout({
       <header className="sticky top-0 z-40 w-full border-b bg-white/70 dark:bg-background/70 backdrop-blur-xl supports-backdrop-filter:bg-white/60">
         <div className="flex h-16 items-center px-4 md:px-6 w-full justify-between">
           <div className="flex items-center gap-4 lg:gap-8">
-            <Link href="/dashboard" className="flex items-center gap-3 group">
+            <LocalizedLink
+              href="/dashboard"
+              className="flex items-center gap-3 group"
+            >
               <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary transition-transform group-hover:scale-105">
                 <Image
                   src="/dm.png"
@@ -134,24 +144,24 @@ export default function DashboardLayout({
                   className="object-contain drop-shadow-sm"
                 />
               </div>
-              <span className="hidden font-bold tracking-tight md:inline-block text-lg bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/80">
+              <span className="hidden font-bold tracking-tight md:inline-block text-lg bg-clip-text text-transparent bg-linear-to-r from-foreground to-foreground/80">
                 Daily Management
               </span>
-            </Link>
+            </LocalizedLink>
 
-            {/* Desktop Nav */}
             <div className="hidden lg:flex items-center">
               <TopNavLinks />
             </div>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-4">
+            <LanguageSwitcher />
             <ThemeToggle />
 
             <div className="h-6 w-px bg-border mx-1 hidden sm:block"></div>
 
             {/* Profile Route */}
-            <Link
+            <LocalizedLink
               href="/dashboard/profile"
               className="flex items-center gap-2 rounded-full p-1 pr-3 hover:bg-accent transition-all duration-300 border border-transparent hover:border-border"
             >
@@ -169,7 +179,7 @@ export default function DashboardLayout({
                   {displayPosition}
                 </span>
               </div>
-            </Link>
+            </LocalizedLink>
 
             {/* Logout Button */}
             <button
@@ -237,21 +247,21 @@ export default function DashboardLayout({
         <AlertDialogContent className="rounded-2xl sm:max-w-[425px]">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-xl font-semibold">
-              ยืนยันการออกจากระบบ?
+              {t("logoutConfirmTitle")}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-base text-muted-foreground">
-              คุณแน่ใจหรือไม่ว่าต้องการออกจากระบบในขณะนี้?
+              {t("logoutConfirmDescription")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-6 sm:space-x-4">
             <AlertDialogCancel className="w-full sm:w-auto rounded-xl border-border hover:bg-accent">
-              ยกเลิก
+              {t("cancel")}
             </AlertDialogCancel>
             <AlertDialogAction
               className="w-full sm:w-auto rounded-xl bg-red-600 hover:bg-red-700 focus:ring-red-600 shadow-md shadow-red-500/20 text-white"
               onClick={() => signOut({ redirectTo: "/login" })}
             >
-              ออกจากระบบ
+              {t("logout")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

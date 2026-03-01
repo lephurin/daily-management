@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useTranslations } from "next-intl";
 import { JiraCredentialDialog } from "@/features/external-apis/components/credential-dialogs";
 import type { JiraIssue } from "@/features/external-apis/types";
 import { motion, AnimatePresence } from "framer-motion";
@@ -42,6 +43,7 @@ const itemVariants = {
 };
 
 export function JiraWidgetPlaceholder() {
+  const t = useTranslations("Widgets.jira");
   const { data: session } = useSession();
   const userEmail = session?.user?.email;
 
@@ -105,15 +107,15 @@ export function JiraWidgetPlaceholder() {
         <div className="rounded-full bg-blue-100 p-3 dark:bg-blue-900/30">
           <Ghost className="h-8 w-8 text-blue-600 dark:text-blue-400" />
         </div>
-        <p className="text-sm text-muted-foreground">Jira ยังไม่ได้เชื่อมต่อ</p>
+        <p className="text-sm text-muted-foreground">{t("notConnected")}</p>
         <JiraCredentialDialog />
       </motion.div>
     );
   } else if (error || !sprintData) {
     const displayError =
       error?.message === "NO_ACTIVE_SPRINT"
-        ? "ไม่พบ Active Sprint ในขณะนี้"
-        : "ดึงข้อมูลจาก Jira ไม่สำเร็จ";
+        ? t("noActiveSprint")
+        : t("fetchFailed");
 
     content = (
       <motion.div
@@ -126,7 +128,7 @@ export function JiraWidgetPlaceholder() {
       >
         <div className="flex items-center justify-between pb-2">
           <h3 className="text-sm font-semibold truncate pr-2 flex-1">
-            Jira Active Sprint
+            {t("sprintTitle")}
           </h3>
           <div className="flex items-center gap-2 shrink-0">
             <JiraCredentialDialog
@@ -169,7 +171,7 @@ export function JiraWidgetPlaceholder() {
             <span className="text-xs bg-muted px-2 py-1 rounded-full whitespace-nowrap">
               {sprintData.endDate
                 ? new Date(sprintData.endDate).toLocaleDateString()
-                : "Active"}
+                : t("active")}
             </span>
             <JiraCredentialDialog
               trigger={
@@ -188,7 +190,7 @@ export function JiraWidgetPlaceholder() {
         <div className="relative mb-2 px-1">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="ค้นหา Ticket no., Title, Status..."
+            placeholder={t("searchPlaceholder")}
             className="pl-9 h-9 text-xs"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -225,7 +227,7 @@ export function JiraWidgetPlaceholder() {
               </p>
               <div className="flex justify-between items-center mt-2">
                 <span className="text-xs text-muted-foreground">
-                  {issue.assignee || "Unassigned"}
+                  {issue.assignee || t("unassigned")}
                 </span>
                 {/* <span className="text-[10px] text-muted-foreground">
                   ⏱ {new Date(issue.updated).toLocaleDateString()}
@@ -236,7 +238,7 @@ export function JiraWidgetPlaceholder() {
 
           {filteredIssues.length === 0 && (
             <p className="text-sm text-muted-foreground text-center py-4">
-              {searchTerm ? "ไม่พบรายการที่ค้นหา" : "ไม่มี Issue ใน Sprint นี้"}
+              {searchTerm ? t("noResults") : t("noIssues")}
             </p>
           )}
         </div>
@@ -248,6 +250,7 @@ export function JiraWidgetPlaceholder() {
 }
 
 export function CalendarWidgetContent() {
+  const t = useTranslations("Widgets.calendar");
   const { data: session } = useSession();
 
   const isGoogleUser = session?.user?.provider === "google";
@@ -313,9 +316,7 @@ export function CalendarWidgetContent() {
         <div className="rounded-full bg-green-100 p-3 dark:bg-green-900/30">
           <Calendar className="h-8 w-8 text-green-600 dark:text-green-400" />
         </div>
-        <p className="text-sm text-muted-foreground">
-          ลงชื่อเข้าใช้ด้วย Google เพื่อดูปฏิทิน
-        </p>
+        <p className="text-sm text-muted-foreground">{t("notConnected")}</p>
       </motion.div>
     );
   } else if (isLoading) {
@@ -356,7 +357,7 @@ export function CalendarWidgetContent() {
           className="cursor-pointer"
           onClick={() => window.location.reload()}
         >
-          ลองใหม่
+          {t("retry")}
         </Button>
       </motion.div>
     );
@@ -373,7 +374,7 @@ export function CalendarWidgetContent() {
         <div className="rounded-full bg-green-100 p-3 dark:bg-green-900/30">
           <Check className="h-8 w-8 text-green-600 dark:text-green-400" />
         </div>
-        <p className="text-sm text-muted-foreground">ไม่มีนัดหมายวันนี้ 🎉</p>
+        <p className="text-sm text-muted-foreground">{t("noEvents")}</p>
       </motion.div>
     );
   } else {
@@ -389,15 +390,15 @@ export function CalendarWidgetContent() {
         <div className="flex items-center gap-4 px-2 pb-2 text-[10px] text-muted-foreground border-b border-border/50 mb-2">
           <div className="flex items-center gap-1.5">
             <div className="h-1.5 w-1.5 rounded-full bg-gray-400" />
-            <span>ผ่านมาแล้ว</span>
+            <span>{t("statusPast")}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
-            <span>กำลังถึง/ดำเนินการ</span>
+            <span>{t("statusCurrent")}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="h-1.5 w-1.5 rounded-full bg-blue-500" />
-            <span>ยังไม่ถึง</span>
+            <span>{t("statusUpcoming")}</span>
           </div>
         </div>
 
@@ -405,7 +406,7 @@ export function CalendarWidgetContent() {
           <div className="flex items-center gap-1.5 px-1 mb-3 pb-1 scrollbar-none overflow-visible">
             <div
               className="flex items-center justify-center text-muted-foreground shrink-0 mr-1 bg-secondary/30 rounded-full p-1.5"
-              title="ตัวกรองปฏิทิน"
+              title={t("filterTitle")}
             >
               <Filter className="h-3 w-3" />
             </div>
@@ -439,7 +440,7 @@ export function CalendarWidgetContent() {
 
         {filteredTodayEvents.length === 0 && (
           <p className="text-sm text-muted-foreground text-center py-4">
-            ไม่มีนัดหมายในปฏิทินที่เลือก
+            {t("noResults")}
           </p>
         )}
 
@@ -477,7 +478,7 @@ export function CalendarWidgetContent() {
                 <div className={`h-2 w-2 shrink-0 rounded-full ${dotColor}`} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium transition-colors">
-                    {event.title?.trim() || "(ไม่มีชื่อ)"}
+                    {event.title?.trim() || t("noTitle")}
                   </p>
                   {event.calendarName && (
                     <div className="mt-1 flex items-center">
@@ -518,6 +519,7 @@ export function CalendarWidgetContent() {
 }
 
 export function GmailWidgetContent() {
+  const t = useTranslations("Widgets.gmail");
   const { data: session } = useSession();
 
   const isGoogleUser = session?.user?.provider === "google";
@@ -554,9 +556,7 @@ export function GmailWidgetContent() {
         <div className="rounded-full bg-red-100 p-3 dark:bg-red-900/30">
           <Mail className="h-8 w-8 text-red-500 dark:text-red-400" />
         </div>
-        <p className="text-sm text-muted-foreground">
-          ลงชื่อเข้าใช้ด้วย Google เพื่อดูอีเมล
-        </p>
+        <p className="text-sm text-muted-foreground">{t("notConnected")}</p>
       </motion.div>
     );
   } else if (isLoading) {
@@ -597,7 +597,7 @@ export function GmailWidgetContent() {
           className="cursor-pointer"
           onClick={() => window.location.reload()}
         >
-          ลองใหม่
+          {t("retry")}
         </Button>
       </motion.div>
     );
@@ -614,7 +614,7 @@ export function GmailWidgetContent() {
         <div className="relative mb-2 px-1">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="ค้นหา Subject, Sender, Content..."
+            placeholder={t("searchPlaceholder")}
             className="pl-9 h-9 text-xs"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -659,7 +659,7 @@ export function GmailWidgetContent() {
 
           {filteredMessages.length === 0 && (
             <p className="text-sm text-muted-foreground text-center py-4">
-              {searchTerm ? "ไม่พบรายการที่ค้นหา" : "ไม่มีอีเมลใหม่"}
+              {searchTerm ? t("noResults") : t("noEmails")}
             </p>
           )}
         </div>

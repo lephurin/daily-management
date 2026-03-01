@@ -14,6 +14,8 @@ import {
   GmailWidgetContent,
 } from "./widget-placeholders";
 
+import { useTranslations } from "next-intl";
+
 const widgetContentMap: Record<string, React.ComponentType> = {
   "jira-widget": JiraWidgetPlaceholder,
   "calendar-widget": CalendarWidgetContent,
@@ -21,6 +23,7 @@ const widgetContentMap: Record<string, React.ComponentType> = {
 };
 
 export function DashboardGrid() {
+  const t = useTranslations("DashboardGrid");
   const { widgets } = useDashboardStore();
   const visibleWidgets = widgets.filter((w) => w.visible);
 
@@ -75,11 +78,13 @@ export function DashboardGrid() {
         <div className="flex items-center gap-3">
           {lastUpdated === "failed" ? (
             <span className="text-xs text-destructive animate-in fade-in duration-500 font-medium">
-              โหลดข้อมูลล่าสุดไม่สำเร็จ
+              {t("updateFailed")}
             </span>
           ) : lastUpdated ? (
             <span className="text-xs text-muted-foreground animate-in fade-in duration-500">
-              อัปเดตล่าสุด: {dayjs(lastUpdated).format("MMMM D, YYYY HH:mm")}
+              {t("lastUpdated", {
+                date: dayjs(lastUpdated).format("MMMM D, YYYY HH:mm"),
+              })}
             </span>
           ) : null}
           <Button
@@ -92,7 +97,7 @@ export function DashboardGrid() {
             <RefreshCw
               className={`h-4 w-4 ${isReloading ? "animate-spin" : ""}`}
             />
-            {isReloading ? "กำลังโหลด..." : "โหลดข้อมูลใหม่"}
+            {isReloading ? t("reloading") : t("reload")}
           </Button>
         </div>
       </div>

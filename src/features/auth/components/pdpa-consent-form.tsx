@@ -16,7 +16,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 
+import { useTranslations } from "next-intl";
+
 export function PdpaConsentForm() {
+  const t = useTranslations("Consent");
+  const tp = useTranslations("Privacy");
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -44,67 +48,58 @@ export function PdpaConsentForm() {
   return (
     <Card className="w-full max-w-2xl shadow-lg">
       <CardHeader>
-        <CardTitle className="text-2xl font-bold">
-          นโยบายความเป็นส่วนตัว (PDPA)
-        </CardTitle>
-        <CardDescription>
-          กรุณาอ่านและยอมรับนโยบายความเป็นส่วนตัวก่อนเข้าใช้งานระบบ
-        </CardDescription>
+        <CardTitle className="text-2xl font-bold">{t("title")}</CardTitle>
+        <CardDescription>{t("description")}</CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-6">
         {/* Privacy Policy Content */}
         <div className="max-h-80 overflow-y-auto rounded-lg border bg-muted/50 p-6 text-sm leading-relaxed">
           <h3 className="mb-4 text-base font-semibold">
-            Privacy Policy – Daily Management
+            {tp("title")} – Daily Management
           </h3>
 
           <section className="mb-4">
-            <h4 className="mb-2 font-medium">1. ข้อมูลที่เราเก็บรวบรวม</h4>
+            <h4 className="mb-2 font-medium">{tp("q1_title")}</h4>
             <ul className="list-disc space-y-1 pl-5">
-              <li>ข้อมูลบัญชี: ชื่อ, อีเมล, รูปโปรไฟล์จาก Google Account</li>
-              <li>ข้อมูลการใช้งาน: บันทึกประจำวัน, การตั้งค่า Dashboard</li>
-              <li>
-                ข้อมูลจากบริการภายนอก: Jira Tasks, Calendar Events
-                (เมื่อผู้ใช้เชื่อมต่อ)
-              </li>
+              <li>{tp("q1_item1")}</li>
+              <li>{tp("q1_item2")}</li>
+              <li>{tp("q1_item3")}</li>
             </ul>
           </section>
 
           <section className="mb-4">
-            <h4 className="mb-2 font-medium">2. วัตถุประสงค์ในการใช้ข้อมูล</h4>
+            <h4 className="mb-2 font-medium">{tp("q2_title")}</h4>
             <ul className="list-disc space-y-1 pl-5">
-              <li>เพื่อให้บริการ Dashboard และฟีเจอร์ต่างๆ</li>
-              <li>เพื่อสร้างรายงาน AI Summary</li>
-              <li>เพื่อส่งออกข้อมูลในรูปแบบ Excel</li>
+              <li>{tp("q2_item1")}</li>
+              <li>{tp("q2_item2")}</li>
+              <li>{tp("q2_item3")}</li>
             </ul>
           </section>
 
           <section className="mb-4">
-            <h4 className="mb-2 font-medium">3. การปกป้องข้อมูล</h4>
+            <h4 className="mb-2 font-medium">{tp("q3_title")}</h4>
             <ul className="list-disc space-y-1 pl-5">
-              <li>ข้อมูลถูกเก็บบน Supabase ที่เข้ารหัส</li>
-              <li>ใช้ Row-Level Security (RLS) เพื่อควบคุมการเข้าถึง</li>
-              <li>Token ภายนอกถูกเข้ารหัสก่อนจัดเก็บ</li>
+              <li>{tp("q3_item1")}</li>
+              <li>{tp("q3_item2")}</li>
+              <li>{tp("q3_item3")}</li>
             </ul>
           </section>
 
           <section className="mb-4">
-            <h4 className="mb-2 font-medium">4. สิทธิ์ของเจ้าของข้อมูล</h4>
+            <h4 className="mb-2 font-medium">{tp("q5_title")}</h4>
+            <p className="mb-2">{tp("q5_subtitle")}</p>
             <ul className="list-disc space-y-1 pl-5">
-              <li>สิทธิ์ในการเข้าถึงข้อมูลของตนเอง</li>
-              <li>สิทธิ์ในการแก้ไขข้อมูล</li>
-              <li>สิทธิ์ในการลบข้อมูล</li>
-              <li>สิทธิ์ในการถอนความยินยอม</li>
+              <li>{tp("q5_item1")}</li>
+              <li>{tp("q5_item2")}</li>
+              <li>{tp("q5_item3")}</li>
+              <li>{tp("q5_item4")}</li>
             </ul>
           </section>
 
           <section>
-            <h4 className="mb-2 font-medium">5. การติดต่อ</h4>
-            <p>
-              หากมีคำถามเกี่ยวกับนโยบายนี้ สามารถติดต่อผ่านระบบ Support
-              ภายในแอปพลิเคชัน
-            </p>
+            <h4 className="mb-2 font-medium">{tp("q8_title")}</h4>
+            <p>{tp("q8_text")}</p>
           </section>
         </div>
 
@@ -119,9 +114,7 @@ export function PdpaConsentForm() {
             htmlFor="pdpa-consent"
             className="cursor-pointer text-sm leading-relaxed"
           >
-            ฉันได้อ่านและยอมรับนโยบายความเป็นส่วนตัว (Privacy Policy)
-            และยินยอมให้ระบบเก็บรวบรวม ใช้
-            และเปิดเผยข้อมูลส่วนบุคคลตามที่ระบุไว้ข้างต้น
+            {t("checkbox")}
           </Label>
         </div>
       </CardContent>
@@ -133,7 +126,7 @@ export function PdpaConsentForm() {
           className="w-full"
           size="lg"
         >
-          {loading ? "กำลังบันทึก..." : "ยอมรับและเข้าสู่ระบบ"}
+          {loading ? t("saving") : t("submit")}
         </Button>
       </CardFooter>
     </Card>

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface ChatMessage {
   id: string;
@@ -14,6 +15,7 @@ interface ChatMessage {
 }
 
 export function AiChatPanel() {
+  const t = useTranslations("Chat");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -96,8 +98,7 @@ export function AiChatPanel() {
         {
           id: crypto.randomUUID(),
           role: "assistant",
-          content:
-            "ขออภัย เกิดข้อผิดพลาด กรุณาตั้งค่า OPENAI_API_KEY ใน .env.local",
+          content: t("error"),
         },
       ]);
     } finally {
@@ -110,7 +111,7 @@ export function AiChatPanel() {
       <CardHeader className="shrink-0">
         <CardTitle className="flex items-center gap-2 text-base">
           <span className="inline-block h-2 w-2 rounded-full bg-green-500" />
-          AI Assistant
+          {t("title")}
         </CardTitle>
       </CardHeader>
 
@@ -127,10 +128,7 @@ export function AiChatPanel() {
               <div className="rounded-full bg-purple-100 p-4 dark:bg-purple-900/30">
                 <MessageCircle className="h-8 w-8 text-purple-600 dark:text-purple-400" />
               </div>
-              <p className="text-sm text-muted-foreground">
-                ถามอะไรก็ได้! เช่น &ldquo;สรุปงานวันนี้&rdquo; หรือ
-                &ldquo;มีนัดอะไรบ้าง&rdquo;
-              </p>
+              <p className="text-sm text-muted-foreground">{t("welcome")}</p>
             </motion.div>
           )}
 
@@ -166,7 +164,7 @@ export function AiChatPanel() {
                 className="flex justify-start"
               >
                 <div className="rounded-2xl bg-muted px-4 py-2 text-sm">
-                  <span className="animate-pulse">กำลังคิด...</span>
+                  <span className="animate-pulse">{t("thinking")}</span>
                 </div>
               </motion.div>
             )}
@@ -181,12 +179,12 @@ export function AiChatPanel() {
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="พิมพ์ข้อความ..."
+            placeholder={t("placeholder")}
             disabled={isLoading}
             className="flex-1"
           />
           <Button type="submit" size="sm" disabled={isLoading || !input.trim()}>
-            ส่ง
+            {t("send")}
           </Button>
         </form>
       </CardContent>

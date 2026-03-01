@@ -22,8 +22,11 @@ import type { Member, UpdateMemberRoleRequest } from "@/features/members/types";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { axios } from "@/lib/axios";
 import { toast } from "sonner";
+import { useTranslations, useLocale } from "next-intl";
 
 export function MemberDataTable() {
+  const t = useTranslations("Members");
+  const locale = useLocale();
   const queryClient = useQueryClient();
 
   const { data: members = [], isLoading } = useQuery<Member[]>({
@@ -41,11 +44,11 @@ export function MemberDataTable() {
       });
     },
     onSuccess: () => {
-      toast.success("อัปเดตสิทธิ์สำเร็จ");
+      toast.success(t("toast.updateSuccess"));
       queryClient.invalidateQueries({ queryKey: ["members"] });
     },
     onError: () => {
-      toast.error("เกิดข้อผิดพลาดในการอัปเดตสิทธิ์");
+      toast.error(t("toast.updateError"));
     },
   });
 
@@ -62,10 +65,10 @@ export function MemberDataTable() {
         <TableHeader>
           <TableRow>
             <TableHead className="w-[50px]"></TableHead>
-            <TableHead>ชื่อ</TableHead>
-            <TableHead>อีเมล</TableHead>
-            <TableHead>Role</TableHead>
-            <TableHead>วันที่สมัคร</TableHead>
+            <TableHead>{t("table.name")}</TableHead>
+            <TableHead>{t("table.email")}</TableHead>
+            <TableHead>{t("table.role")}</TableHead>
+            <TableHead>{t("table.joinedAt")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -80,7 +83,7 @@ export function MemberDataTable() {
           ) : members?.length === 0 ? (
             <TableRow>
               <TableCell colSpan={5} className="h-24 text-center">
-                ไม่พบข้อมูลสมาชิก
+                {t("table.noData")}
               </TableCell>
             </TableRow>
           ) : (
@@ -126,7 +129,9 @@ export function MemberDataTable() {
                   </Select>
                 </TableCell>
                 <TableCell className="text-sm text-muted-foreground">
-                  {new Date(member.createdAt).toLocaleDateString("th-TH")}
+                  {new Date(member.createdAt).toLocaleDateString(
+                    locale === "th" ? "th-TH" : "en-US",
+                  )}
                 </TableCell>
               </TableRow>
             ))

@@ -12,8 +12,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Footer } from "@/components/footer";
+import { useTranslations } from "next-intl";
 
 export default function LoginPage() {
+  const t = useTranslations("Login");
   const [loading, setLoading] = useState(false);
 
   const handleDevLogin = async () => {
@@ -40,10 +42,10 @@ export default function LoginPage() {
               />
             </div>
             <CardTitle className="text-3xl font-bold tracking-tight">
-              Daily Management
+              {t("title")}
             </CardTitle>
             <CardDescription className="text-base">
-              Enterprise-grade Productivity Platform
+              {t("description")}
             </CardDescription>
           </CardHeader>
 
@@ -72,7 +74,7 @@ export default function LoginPage() {
                   fill="#EA4335"
                 />
               </svg>
-              Sign in with Google
+              {t("google")}
             </Button>
 
             {/* Dev-only login */}
@@ -84,7 +86,7 @@ export default function LoginPage() {
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
                     <span className="bg-card px-2 text-muted-foreground">
-                      Development
+                      {t("development")}
                     </span>
                   </div>
                 </div>
@@ -95,7 +97,7 @@ export default function LoginPage() {
                   className="w-full"
                   disabled={loading}
                 >
-                  {loading ? "Signing in..." : "Dev Login (super_admin)"}
+                  {loading ? t("signingIn") : t("devLogin")}
                 </Button>
               </>
             )}

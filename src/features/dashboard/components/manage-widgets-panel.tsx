@@ -11,6 +11,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { useTranslations } from "next-intl";
 import {
   Settings2,
   GripVertical,
@@ -46,6 +47,7 @@ const sizeClasses: Record<WidgetConfig["size"], string> = {
 };
 
 function SortablePlaylistItem({ widget }: { widget: WidgetConfig }) {
+  const t = useTranslations("DashboardGrid");
   const { toggleWidgetVisibility, toggleWidgetSize } = useDashboardStore();
   const {
     attributes,
@@ -91,7 +93,7 @@ function SortablePlaylistItem({ widget }: { widget: WidgetConfig }) {
           size="icon"
           className="h-6 w-6 text-muted-foreground hover:text-destructive shrink-0"
           onClick={() => toggleWidgetVisibility(widget.id)}
-          title="ซ่อน Widget"
+          title={t("hideWidget")}
         >
           <Minus className="h-4 w-4" />
         </Button>
@@ -99,14 +101,14 @@ function SortablePlaylistItem({ widget }: { widget: WidgetConfig }) {
 
       <div className="flex justify-between items-center mt-auto pt-2 border-t">
         <span className="text-xs text-muted-foreground">
-          {widget.size === "large" ? "เต็มแถว" : "ครึ่งแถว"}
+          {widget.size === "large" ? t("fullWidth") : t("halfWidth")}
         </span>
         <Button
           variant="secondary"
           size="sm"
           className="h-6 px-2 text-[10px] text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
           onClick={() => toggleWidgetSize(widget.id)}
-          title="สลับขนาด"
+          title={t("switchSize")}
         >
           <LayoutTemplate className="h-3 w-3 mr-1" />
           {widget.size === "large" ? "2:2" : "1:1"}
@@ -117,6 +119,7 @@ function SortablePlaylistItem({ widget }: { widget: WidgetConfig }) {
 }
 
 export function ManageWidgetsPanel() {
+  const t = useTranslations("DashboardGrid");
   const { widgets, setWidgets, toggleWidgetVisibility } = useDashboardStore();
   const [activeId, setActiveId] = useState<string | null>(null);
 
@@ -156,7 +159,7 @@ export function ManageWidgetsPanel() {
       <SheetTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2">
           <Settings2 className="h-4 w-4" />
-          จัดการหน้าจอ
+          {t("manageLayout")}
         </Button>
       </SheetTrigger>
       <SheetContent
@@ -164,10 +167,8 @@ export function ManageWidgetsPanel() {
         className="w-full sm:w-[500px] overflow-y-auto flex flex-col p-4 sm:p-4"
       >
         <SheetHeader className="mb-8 shrink-0">
-          <SheetTitle>จัดการเลย์เอาต์ Dashboard</SheetTitle>
-          <SheetDescription>
-            เปิด/ปิด เลื่อนสลับลำดับ และปรับขนาด Widget แบบจำลองขนาดจริง
-          </SheetDescription>
+          <SheetTitle>{t("manageTitle")}</SheetTitle>
+          <SheetDescription>{t("manageDesc")}</SheetDescription>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto space-y-8 pr-2 pb-8">
@@ -175,12 +176,12 @@ export function ManageWidgetsPanel() {
           <div>
             <h3 className="text-sm font-semibold mb-3 text-foreground flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-green-500" />
-              กำลังแสดงผล ({activeWidgets.length})
+              {t("activeWidgets", { count: activeWidgets.length })}
             </h3>
 
             {activeWidgets.length === 0 ? (
               <div className="text-sm text-muted-foreground p-4 text-center border border-dashed rounded-lg bg-muted/30">
-                ไม่มี Widget ที่กำลังแสดงผล
+                {t("noActive")}
               </div>
             ) : (
               <DndContext
@@ -224,8 +225,8 @@ export function ManageWidgetsPanel() {
                       <div className="flex justify-between items-center mt-auto pt-2 border-t">
                         <span className="text-xs text-muted-foreground">
                           {activeWidget.size === "large"
-                            ? "เต็มแถว"
-                            : "ครึ่งแถว"}
+                            ? t("fullWidth")
+                            : t("halfWidth")}
                         </span>
                         <Button
                           variant="secondary"
@@ -248,13 +249,13 @@ export function ManageWidgetsPanel() {
           <div>
             <h3 className="text-sm font-semibold mb-3 text-muted-foreground flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-muted-foreground/30" />
-              ซ่อนอยู่ ({inactiveWidgets.length})
+              {t("hiddenWidgets", { count: inactiveWidgets.length })}
             </h3>
 
             <div className="space-y-2">
               {inactiveWidgets.length === 0 ? (
                 <div className="text-sm text-muted-foreground p-4 text-center border border-dashed rounded-lg bg-muted/10">
-                  ไม่มี Widget ที่ซ่อนอยู่
+                  {t("noHidden")}
                 </div>
               ) : (
                 inactiveWidgets.map((widget) => (
@@ -272,7 +273,7 @@ export function ManageWidgetsPanel() {
                       size="icon"
                       className="h-7 w-7 text-muted-foreground hover:text-primary shrink-0 transition-colors"
                       onClick={() => toggleWidgetVisibility(widget.id)}
-                      title="แสดง Widget"
+                      title={t("showWidget")}
                     >
                       <Plus className="h-4 w-4" />
                     </Button>

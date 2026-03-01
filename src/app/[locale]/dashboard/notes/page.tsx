@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { NoteEditor } from "@/features/daily-notes/components/note-editor";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -49,6 +50,8 @@ export default function DailyNotesPage() {
     useDailyNotesHistoryQuery(filterFrom, filterTo, viewMode === "history");
 
   const saveNoteMutation = useSaveDailyNoteMutation();
+  const t = useTranslations("Notes");
+  const locale = useLocale();
 
   const historyNotes: DailyNote[] = historyData || [];
   const existingContent = noteData?.content ? noteData.content : undefined;
@@ -64,17 +67,15 @@ export default function DailyNotesPage() {
         content: content.json,
         plainText: content.text,
       });
-      toast.success("บันทึกสำเร็จ!", {
-        description: `บันทึกวันที่ ${noteDate} เรียบร้อย`,
+      toast.success(t("saveSuccess"), {
+        description: t("saveSuccessDesc", { date: noteDate }),
       });
       setIsEditing(false); // Switch back to view mode
       return true;
     } catch (error) {
-      toast.error("บันทึกไม่สำเร็จ", {
+      toast.error(t("saveError"), {
         description:
-          error instanceof Error
-            ? error.message
-            : "เกิดข้อผิดพลาดในการเชื่อมต่อ",
+          error instanceof Error ? error.message : t("saveErrorDesc"),
       });
       return false;
     }
@@ -110,8 +111,8 @@ export default function DailyNotesPage() {
     >
       <div className="flex items-center justify-between">
         <div className="space-y-1">
-          <h2 className="text-2xl font-bold tracking-tight">Daily Notes</h2>
-          <p className="text-sm text-muted-foreground">บันทึกประจำวันของคุณ</p>
+          <h2 className="text-2xl font-bold tracking-tight">{t("title")}</h2>
+          <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -119,14 +120,14 @@ export default function DailyNotesPage() {
             size="sm"
             onClick={() => setViewMode("editor")}
           >
-            ✏️ เขียน
+            ✏️ {t("write")}
           </Button>
           <Button
             variant={viewMode === "history" ? "default" : "outline"}
             size="sm"
             onClick={() => setViewMode("history")}
           >
-            📋 ประวัติ
+            📋 {t("history")}
           </Button>
         </div>
       </div>
@@ -142,18 +143,21 @@ export default function DailyNotesPage() {
           >
             <div className="flex items-center justify-between rounded-lg border bg-card/50 px-4 py-3 mb-4">
               <div className="text-sm text-muted-foreground">
-                📅 วันที่:{" "}
+                📅 {t("dateLabel")}{" "}
                 <span className="font-medium text-foreground">
-                  {new Date(noteDate).toLocaleDateString("th-TH", {
-                    weekday: "long",
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  })}
+                  {new Date(noteDate).toLocaleDateString(
+                    locale === "th" ? "th-TH" : "en-US",
+                    {
+                      weekday: "long",
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    },
+                  )}
                 </span>
                 {isPastDate && (
                   <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-xs">
-                    บันทึกเก่า
+                    {t("oldNote")}
                   </span>
                 )}
               </div>
@@ -165,7 +169,7 @@ export default function DailyNotesPage() {
                   className="cursor-pointer"
                   onClick={() => setIsEditing(!isEditing)}
                 >
-                  {isEditing ? "❌ ยกเลิกแก้ไข" : "✏️ แก้ไขบันทึก"}
+                  {isEditing ? `❌ ${t("cancelEdit")}` : `✏️ ${t("editNote")}`}
                 </Button>
               )}
             </div>
@@ -188,7 +192,7 @@ export default function DailyNotesPage() {
             )}
             {saveNoteMutation.isPending && (
               <p className="mt-2 text-sm text-muted-foreground">
-                กำลังบันทึก...
+                {t("saving")}
               </p>
             )}
           </motion.div>
@@ -206,7 +210,7 @@ export default function DailyNotesPage() {
             <div className="flex flex-wrap items-end gap-3 rounded-lg border bg-card p-4">
               <div className="space-y-1">
                 <label className="text-xs font-medium text-muted-foreground">
-                  จากวันที่
+                  {t("filterFrom")}
                 </label>
                 <Input
                   type="date"
@@ -217,7 +221,7 @@ export default function DailyNotesPage() {
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-medium text-muted-foreground">
-                  ถึงวันที่
+                  {t("filterTo")}
                 </label>
                 <Input
                   type="date"
@@ -228,10 +232,10 @@ export default function DailyNotesPage() {
               </div>
               <div className="flex-1 space-y-1">
                 <label className="text-xs font-medium text-muted-foreground">
-                  ค้นหา
+                  {t("searchLabel")}
                 </label>
                 <Input
-                  placeholder="ค้นหาจากชื่อหรือเนื้อหา..."
+                  placeholder={t("searchPlaceholder")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -251,7 +255,7 @@ export default function DailyNotesPage() {
                   <FileText className="h-8 w-8 text-muted-foreground" />
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  ไม่พบบันทึกในช่วงเวลาที่เลือก
+                  {t("noNotesFound")}
                 </p>
               </div>
             ) : (
@@ -259,12 +263,16 @@ export default function DailyNotesPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[130px]">วันที่</TableHead>
-                      <TableHead>ชื่อบันทึก</TableHead>
-                      <TableHead className="hidden md:table-cell">
-                        ตัวอย่างเนื้อหา
+                      <TableHead className="w-[130px]">
+                        {t("tableDate")}
                       </TableHead>
-                      <TableHead className="w-[160px]">อัปเดตล่าสุด</TableHead>
+                      <TableHead>{t("tableTitle")}</TableHead>
+                      <TableHead className="hidden md:table-cell">
+                        {t("tablePreview")}
+                      </TableHead>
+                      <TableHead className="w-[160px]">
+                        {t("tableUpdated")}
+                      </TableHead>
                       <TableHead className="w-[80px]" />
                     </TableRow>
                   </TableHeader>
@@ -299,7 +307,7 @@ export default function DailyNotesPage() {
                             size="sm"
                             onClick={() => handleOpenNote(note.note_date)}
                           >
-                            เปิด
+                            {t("open")}
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -309,7 +317,7 @@ export default function DailyNotesPage() {
               </div>
             )}
             <p className="text-xs text-muted-foreground">
-              แสดง {filteredNotes.length} รายการ
+              {t("showingItems", { count: filteredNotes.length })}
             </p>
           </motion.div>
         )}

@@ -2,8 +2,10 @@
 
 import { AiChatPanel } from "@/features/ai-chatbot/components/ai-chat-panel";
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 
 export default function ChatPage() {
+  const t = useTranslations("Chat");
   const pageVariants = {
     hidden: { opacity: 0, y: 10 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
@@ -17,10 +19,8 @@ export default function ChatPage() {
       animate="visible"
     >
       <div className="space-y-1">
-        <h2 className="text-2xl font-bold tracking-tight">AI Assistant</h2>
-        <p className="text-sm text-muted-foreground">
-          ถามอะไรก็ได้เกี่ยวกับงาน, นัดหมาย, หรือข้อมูลต่างๆ
-        </p>
+        <h2 className="text-2xl font-bold tracking-tight">{t("title")}</h2>
+        <p className="text-sm text-muted-foreground">{t("description")}</p>
       </div>
       <AiChatPanel />
     </motion.div>

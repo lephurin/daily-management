@@ -22,23 +22,26 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { ExternalLink } from "lucide-react";
 
-const jiraSchema = z.object({
-  baseUrl: z
-    .string()
-    .url("กรุณาใส่ URL ที่ถูกต้อง (ต้องมี https://)")
-    .min(1, "กรุณาใส่ Base URL"),
-  email: z.string().email("กรุณาใส่อีเมลที่ถูกต้อง"),
-  apiToken: z.string().min(1, "กรุณาใส่ API Token"),
-  boardId: z.string().min(1, "กรุณาใส่ Board ID"),
-});
-
-type JiraFormData = z.infer<typeof jiraSchema>;
+import { useTranslations } from "next-intl";
 
 export function JiraCredentialDialog({ trigger }: { trigger?: ReactNode }) {
+  const t = useTranslations("Widgets.jiraCredentials");
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
   const { data: session } = useSession();
   const userEmail = session?.user?.email;
+
+  const jiraSchema = z.object({
+    baseUrl: z
+      .string()
+      .url(t("validation.invalidUrl"))
+      .min(1, t("validation.requiredUrl")),
+    email: z.string().email(t("validation.invalidEmail")),
+    apiToken: z.string().min(1, t("validation.requiredToken")),
+    boardId: z.string().min(1, t("validation.requiredBoardId")),
+  });
+
+  type JiraFormData = z.infer<typeof jiraSchema>;
 
   const {
     register,
@@ -83,8 +86,8 @@ export function JiraCredentialDialog({ trigger }: { trigger?: ReactNode }) {
         localStorage.setItem(`jira_credentials_${userEmail}`, encryptedData);
       }
 
-      toast.success("เชื่อมต่อสำเร็จ", {
-        description: "บันทึกข้อมูล Jira API เรียบร้อยแล้ว",
+      toast.success(t("success"), {
+        description: t("successDesc"),
       });
 
       setOpen(false);
@@ -93,8 +96,8 @@ export function JiraCredentialDialog({ trigger }: { trigger?: ReactNode }) {
       queryClient.invalidateQueries({ queryKey: ["jira-active-sprint"] });
     } catch (error) {
       console.error("Failed to save Jira credentials:", error);
-      toast.error("ข้อผิดพลาด", {
-        description: "ไม่สามารถบันทึกข้อมูลได้",
+      toast.error(t("error"), {
+        description: t("errorDesc"),
       });
     }
   };
@@ -104,20 +107,18 @@ export function JiraCredentialDialog({ trigger }: { trigger?: ReactNode }) {
       <DialogTrigger asChild>
         {trigger || (
           <Button variant="outline" size="sm">
-            Connect Jira
+            {t("connect")}
           </Button>
         )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Connect Jira</DialogTitle>
-          <DialogDescription>
-            กรอกข้อมูล Jira API เพื่อเชื่อมต่อกับ Active Sprint
-          </DialogDescription>
+          <DialogTitle>{t("title")}</DialogTitle>
+          <DialogDescription>{t("description")}</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="jira-url">Jira Base URL</Label>
+            <Label htmlFor="jira-url">{t("baseUrl")}</Label>
             <Input
               id="jira-url"
               placeholder="https://your-domain.atlassian.net"
@@ -128,7 +129,7 @@ export function JiraCredentialDialog({ trigger }: { trigger?: ReactNode }) {
             )}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="jira-email">Email</Label>
+            <Label htmlFor="jira-email">{t("email")}</Label>
             <Input
               id="jira-email"
               type="email"
@@ -141,12 +142,12 @@ export function JiraCredentialDialog({ trigger }: { trigger?: ReactNode }) {
           </div>
           <div className="space-y-2">
             <div className="flex items-center gap-1.5">
-              <Label htmlFor="jira-token">API Token</Label>
+              <Label htmlFor="jira-token">{t("apiToken")}</Label>
               <a
                 href="https://id.atlassian.com/manage-profile/security/api-tokens"
                 target="_blank"
                 rel="noopener noreferrer"
-                title="รับ API Token"
+                title={t("apiToken")}
                 className="text-blue-500 hover:text-blue-600 transition-colors"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
@@ -163,7 +164,7 @@ export function JiraCredentialDialog({ trigger }: { trigger?: ReactNode }) {
             )}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="jira-board">Board ID</Label>
+            <Label htmlFor="jira-board">{t("boardId")}</Label>
             <Input
               id="jira-board"
               type="text"
@@ -176,7 +177,7 @@ export function JiraCredentialDialog({ trigger }: { trigger?: ReactNode }) {
           </div>
           <DialogFooter>
             <Button type="submit" disabled={isSubmitting} className="w-full">
-              {isSubmitting ? "กำลังเชื่อมต่อ..." : "เชื่อมต่อ"}
+              {isSubmitting ? t("connecting") : t("connect")}
             </Button>
           </DialogFooter>
         </form>
