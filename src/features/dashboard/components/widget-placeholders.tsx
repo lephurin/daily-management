@@ -11,8 +11,10 @@ import {
   useGmailQuery,
   useJiraActiveSprintQuery,
 } from "@/features/dashboard/hooks/api-hooks";
-import { Settings } from "lucide-react";
+import { Settings, Search } from "lucide-react";
 import dayjs from "dayjs";
+import { useState, useMemo } from "react";
+import { Input } from "@/components/ui/input";
 
 // Simple animation variants for staggered lists
 const containerVariants = {
@@ -39,6 +41,21 @@ export function JiraWidgetPlaceholder() {
     isLoading,
     error,
   } = useJiraActiveSprintQuery(userEmail);
+
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredIssues = useMemo(() => {
+    const issues = sprintData?.issues || [];
+    if (!searchTerm.trim()) return issues;
+
+    const lowerTerm = searchTerm.toLowerCase();
+    return issues.filter(
+      (issue) =>
+        issue.key.toLowerCase().includes(lowerTerm) ||
+        issue.summary.toLowerCase().includes(lowerTerm) ||
+        issue.status.toLowerCase().includes(lowerTerm),
+    );
+  }, [sprintData?.issues, searchTerm]);
 
   const isCredentialsError =
     error?.message === "CREDENTIALS_NOT_FOUND" ||
@@ -144,9 +161,9 @@ export function JiraWidgetPlaceholder() {
         exit={{ opacity: 0 }}
         className="space-y-3 p-1"
       >
-        <div className="flex items-center justify-between pb-2">
+        <div className="flex items-center justify-between pb-2 gap-2">
           <h3
-            className="text-sm font-semibold truncate pr-2 flex-1"
+            className="text-sm font-semibold truncate flex-1"
             title={sprintData.name}
           >
             {sprintData.name}
@@ -171,8 +188,18 @@ export function JiraWidgetPlaceholder() {
           </div>
         </div>
 
+        <div className="relative mb-2 px-1">
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="ค้นหา Ticket no., Title, Status..."
+            className="pl-9 h-9 text-xs"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+
         <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
-          {sprintData.issues?.map((issue: JiraIssue) => (
+          {filteredIssues.map((issue: JiraIssue) => (
             <motion.a
               variants={itemVariants}
               initial="hidden"
@@ -210,9 +237,9 @@ export function JiraWidgetPlaceholder() {
             </motion.a>
           ))}
 
-          {(!sprintData.issues || sprintData.issues.length === 0) && (
+          {filteredIssues.length === 0 && (
             <p className="text-sm text-muted-foreground text-center py-4">
-              ไม่มี Issue ใน Sprint นี้
+              {searchTerm ? "ไม่พบรายการที่ค้นหา" : "ไม่มี Issue ใน Sprint นี้"}
             </p>
           )}
         </div>
@@ -410,6 +437,21 @@ export function GmailWidgetContent() {
 
   const { data: messages = [], isLoading, error } = useGmailQuery(isGoogleUser);
 
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredMessages = useMemo(() => {
+    if (!messages) return [];
+    if (!searchTerm.trim()) return messages;
+
+    const lowerTerm = searchTerm.toLowerCase();
+    return messages.filter(
+      (msg) =>
+        msg.subject?.toLowerCase().includes(lowerTerm) ||
+        msg.from?.toLowerCase().includes(lowerTerm) ||
+        msg.snippet?.toLowerCase().includes(lowerTerm),
+    );
+  }, [messages, searchTerm]);
+
   let content;
 
   if (!isGoogleUser) {
@@ -484,19 +526,6 @@ export function GmailWidgetContent() {
         </Button>
       </motion.div>
     );
-  } else if (messages.length === 0) {
-    content = (
-      <motion.div
-        key="empty"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.2 }}
-        className="flex min-h-[200px] flex-col items-center justify-center gap-2 text-center"
-      >
-        <p className="text-sm text-muted-foreground">ไม่มีอีเมลใหม่</p>
-      </motion.div>
-    );
   } else {
     content = (
       <motion.div
@@ -507,40 +536,58 @@ export function GmailWidgetContent() {
         exit={{ opacity: 0 }}
         className="space-y-1 p-1"
       >
-        {messages.map((msg) => (
-          <motion.a
-            variants={itemVariants}
-            initial="hidden"
-            animate="visible"
-            layout
-            key={msg.id}
-            href={`https://mail.google.com/mail/u/0/#inbox/${msg.id}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`block rounded-lg border p-3 transition-colors hover:bg-accent/50 cursor-pointer group ${
-              msg.isUnread
-                ? "border-l-2 border-l-red-500 bg-red-50/30 dark:bg-red-950/10"
-                : ""
-            }`}
-          >
-            <div className="flex items-start justify-between gap-2">
-              <p
-                className={`truncate text-sm group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors ${msg.isUnread ? "font-semibold" : "font-medium"}`}
-              >
-                {msg.subject}
+        <div className="relative mb-2 px-1">
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="ค้นหา Subject, Sender, Content..."
+            className="pl-9 h-9 text-xs"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+
+        <div className="space-y-1 max-h-[350px] overflow-y-auto pr-1">
+          {filteredMessages.map((msg) => (
+            <motion.a
+              variants={itemVariants}
+              initial="hidden"
+              animate="visible"
+              layout
+              key={msg.id}
+              href={`https://mail.google.com/mail/u/0/#inbox/${msg.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`block rounded-lg border p-3 transition-colors hover:bg-accent/50 cursor-pointer group ${
+                msg.isUnread
+                  ? "border-l-2 border-l-red-500 bg-red-50/30 dark:bg-red-950/10"
+                  : ""
+              }`}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <p
+                  className={`truncate text-sm group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors ${msg.isUnread ? "font-semibold" : "font-medium"}`}
+                >
+                  {msg.subject}
+                </p>
+                {msg.isUnread && (
+                  <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-red-500" />
+                )}
+              </div>
+              <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                {msg.from}
               </p>
-              {msg.isUnread && (
-                <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-red-500" />
-              )}
-            </div>
-            <p className="mt-0.5 truncate text-xs text-muted-foreground">
-              {msg.from}
+              <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
+                {msg.snippet}
+              </p>
+            </motion.a>
+          ))}
+
+          {filteredMessages.length === 0 && (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              {searchTerm ? "ไม่พบรายการที่ค้นหา" : "ไม่มีอีเมลใหม่"}
             </p>
-            <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
-              {msg.snippet}
-            </p>
-          </motion.a>
-        ))}
+          )}
+        </div>
       </motion.div>
     );
   }
