@@ -32,6 +32,8 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import Lottie from "lottie-react";
+import emptyAnimation from "@/assets/animations/empty-box.json";
 
 // Simple animation variants for staggered lists
 const containerVariants = {
@@ -459,9 +461,18 @@ export function JiraWidgetPlaceholder() {
           ))}
 
           {filteredIssues.length === 0 && (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              {searchTerm ? t("noResults") : t("noIssues")}
-            </p>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex flex-col items-center justify-center p-6 text-center min-h-[160px]"
+            >
+              <div className="opacity-70 mb-2">
+                <Lottie animationData={emptyAnimation} loop={true} />
+              </div>
+              <p className="text-sm text-muted-foreground font-medium">
+                {searchTerm ? t("noResults") : t("noIssues")}
+              </p>
+            </motion.div>
           )}
         </div>
       </motion.div>
@@ -669,9 +680,18 @@ export function CalendarWidgetContent() {
         )}
 
         {filteredTodayEvents.length === 0 && (
-          <p className="text-sm text-muted-foreground text-center py-4">
-            {t("noResults")}
-          </p>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex flex-col items-center justify-center p-6 text-center min-h-[160px]"
+          >
+            <div className="opacity-70 mb-2">
+              <Lottie animationData={emptyAnimation} loop={true} />
+            </div>
+            <p className="text-sm text-muted-foreground font-medium">
+              {t("noResults")}
+            </p>
+          </motion.div>
         )}
 
         <div className="space-y-2 max-h-[350px] overflow-y-auto pr-1">
@@ -883,19 +903,19 @@ export function GmailWidgetContent() {
               rel="noopener noreferrer"
               className={`block rounded-lg border p-3 transition-colors hover:bg-accent/50 cursor-pointer group ${
                 msg.isUnread
-                  ? "border-l-2 border-l-red-500 bg-red-50/30 dark:bg-red-950/10"
-                  : ""
+                  ? "border-l-2 border-l-blue-500 bg-blue-50/30 dark:bg-blue-950/10"
+                  : "opacity-80 hover:opacity-100"
               }`}
             >
               <div className="flex items-start justify-between gap-2">
                 <p
-                  className={`truncate text-sm group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors flex-1 ${msg.isUnread ? "font-semibold" : "font-medium"}`}
+                  className={`truncate text-sm group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors flex-1 ${msg.isUnread ? "font-bold text-foreground" : "font-normal text-muted-foreground"}`}
                 >
                   {msg.subject}
                 </p>
                 <div className="flex items-center gap-2 shrink-0">
                   {msg.isUnread && (
-                    <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-red-500" />
+                    <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-blue-500 shadow-sm shadow-blue-500/50" />
                   )}
                   <ExternalLink className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
@@ -910,9 +930,18 @@ export function GmailWidgetContent() {
           ))}
 
           {filteredMessages.length === 0 && (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              {searchTerm ? t("noResults") : t("noEmails")}
-            </p>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex flex-col items-center justify-center p-6 text-center min-h-[160px]"
+            >
+              <div className="opacity-70 mb-2">
+                <Lottie animationData={emptyAnimation} loop={true} />
+              </div>
+              <p className="text-sm text-muted-foreground font-medium">
+                {searchTerm ? t("noResults") : t("noEmails")}
+              </p>
+            </motion.div>
           )}
         </div>
       </motion.div>
