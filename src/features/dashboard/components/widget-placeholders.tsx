@@ -14,17 +14,24 @@ import {
 } from "@/features/dashboard/hooks/api-hooks";
 import {
   Settings,
-  Search,
   Calendar,
-  Check,
+  Search,
   ExternalLink,
   Mail,
   Ghost,
   Filter,
+  Coffee,
+  X,
 } from "lucide-react";
 import dayjs from "dayjs";
 import { useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 // Simple animation variants for staggered lists
 const containerVariants = {
@@ -54,9 +61,81 @@ export function JiraWidgetPlaceholder() {
   } = useJiraActiveSprintQuery(userId);
 
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedEpics, setSelectedEpics] = useState<string[]>([]);
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+
+  const uniqueEpics = useMemo(() => {
+    const epics = new Set<string>();
+    sprintData?.issues?.forEach((issue) => {
+      if (issue.epic) epics.add(issue.epic);
+    });
+    return Array.from(epics);
+  }, [sprintData?.issues]);
+
+  const uniqueStatuses = useMemo(() => {
+    const statuses = new Set<string>();
+    sprintData?.issues?.forEach((issue) => {
+      if (issue.status) statuses.add(issue.status);
+    });
+    return Array.from(statuses);
+  }, [sprintData?.issues]);
+
+  const uniqueTypes = useMemo(() => {
+    const types = new Set<string>();
+    sprintData?.issues?.forEach((issue) => {
+      if (issue.type) types.add(issue.type);
+    });
+    return Array.from(types);
+  }, [sprintData?.issues]);
+
+  const toggleEpic = (epic: string) => {
+    setSelectedEpics((prev) =>
+      prev.includes(epic) ? prev.filter((e) => e !== epic) : [...prev, epic],
+    );
+  };
+
+  const toggleStatus = (status: string) => {
+    setSelectedStatuses((prev) =>
+      prev.includes(status)
+        ? prev.filter((s) => s !== status)
+        : [...prev, status],
+    );
+  };
+
+  const toggleType = (type: string) => {
+    setSelectedTypes((prev) =>
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type],
+    );
+  };
+
+  const clearFilters = () => {
+    setSelectedEpics([]);
+    setSelectedStatuses([]);
+    setSelectedTypes([]);
+  };
 
   const filteredIssues = useMemo(() => {
-    const issues = sprintData?.issues || [];
+    let issues = sprintData?.issues || [];
+
+    if (selectedEpics.length > 0) {
+      issues = issues.filter(
+        (issue) => issue.epic && selectedEpics.includes(issue.epic),
+      );
+    }
+
+    if (selectedStatuses.length > 0) {
+      issues = issues.filter(
+        (issue) => issue.status && selectedStatuses.includes(issue.status),
+      );
+    }
+
+    if (selectedTypes.length > 0) {
+      issues = issues.filter(
+        (issue) => issue.type && selectedTypes.includes(issue.type),
+      );
+    }
+
     if (!searchTerm.trim()) return issues;
 
     const lowerTerm = searchTerm.toLowerCase();
@@ -66,7 +145,13 @@ export function JiraWidgetPlaceholder() {
         issue.summary.toLowerCase().includes(lowerTerm) ||
         issue.status.toLowerCase().includes(lowerTerm),
     );
-  }, [sprintData?.issues, searchTerm]);
+  }, [
+    sprintData?.issues,
+    searchTerm,
+    selectedEpics,
+    selectedStatuses,
+    selectedTypes,
+  ]);
 
   const isCredentialsError =
     error?.message === "CREDENTIALS_NOT_FOUND" ||
@@ -170,7 +255,9 @@ export function JiraWidgetPlaceholder() {
           <div className="flex items-center gap-2 shrink-0">
             <span className="text-xs bg-muted px-2 py-1 rounded-full whitespace-nowrap">
               {sprintData.endDate
-                ? new Date(sprintData.endDate).toLocaleDateString()
+                ? t("endsOn", {
+                    date: new Date(sprintData.endDate).toLocaleDateString(),
+                  })
                 : t("active")}
             </span>
             <JiraCredentialDialog
@@ -197,6 +284,125 @@ export function JiraWidgetPlaceholder() {
           />
         </div>
 
+        {(uniqueEpics.length > 0 ||
+          uniqueStatuses.length > 0 ||
+          uniqueTypes.length > 0) && (
+          <div className="flex flex-wrap items-center gap-2 px-1 mb-3">
+            {uniqueEpics.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className={`flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full border transition-all hover:-translate-y-0.5 hover:shadow-sm active:scale-95 ${
+                      selectedEpics.length > 0
+                        ? "bg-blue-500/10 border-blue-500 text-blue-600 dark:text-blue-400 font-medium shadow-sm"
+                        : "bg-secondary/20 border-border/60 text-muted-foreground hover:bg-secondary/60 hover:text-foreground hover:border-border"
+                    }`}
+                  >
+                    <Filter className="h-3 w-3" />
+                    Epic{" "}
+                    {selectedEpics.length > 0 && `(${selectedEpics.length})`}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="w-48 max-h-[200px] overflow-y-auto"
+                  align="start"
+                >
+                  {uniqueEpics.map((epic) => (
+                    <DropdownMenuCheckboxItem
+                      key={epic}
+                      checked={selectedEpics.includes(epic)}
+                      onCheckedChange={() => toggleEpic(epic)}
+                      onSelect={(e) => e.preventDefault()}
+                    >
+                      {epic}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
+            {uniqueStatuses.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className={`flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full border transition-all hover:-translate-y-0.5 hover:shadow-sm active:scale-95 ${
+                      selectedStatuses.length > 0
+                        ? "bg-purple-500/10 border-purple-500 text-purple-600 dark:text-purple-400 font-medium shadow-sm"
+                        : "bg-secondary/20 border-border/60 text-muted-foreground hover:bg-secondary/60 hover:text-foreground hover:border-border"
+                    }`}
+                  >
+                    <Filter className="h-3 w-3" />
+                    Status{" "}
+                    {selectedStatuses.length > 0 &&
+                      `(${selectedStatuses.length})`}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="w-48 max-h-[200px] overflow-y-auto"
+                  align="start"
+                >
+                  {uniqueStatuses.map((status) => (
+                    <DropdownMenuCheckboxItem
+                      key={status}
+                      checked={selectedStatuses.includes(status)}
+                      onCheckedChange={() => toggleStatus(status)}
+                      onSelect={(e) => e.preventDefault()}
+                    >
+                      {status}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
+            {uniqueTypes.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className={`flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full border transition-all hover:-translate-y-0.5 hover:shadow-sm active:scale-95 ${
+                      selectedTypes.length > 0
+                        ? "bg-green-500/10 border-green-500 text-green-600 dark:text-green-400 font-medium shadow-sm"
+                        : "bg-secondary/20 border-border/60 text-muted-foreground hover:bg-secondary/60 hover:text-foreground hover:border-border"
+                    }`}
+                  >
+                    <Filter className="h-3 w-3" />
+                    Type{" "}
+                    {selectedTypes.length > 0 && `(${selectedTypes.length})`}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="w-48 max-h-[200px] overflow-y-auto"
+                  align="start"
+                >
+                  {uniqueTypes.map((type) => (
+                    <DropdownMenuCheckboxItem
+                      key={type}
+                      checked={selectedTypes.includes(type)}
+                      onCheckedChange={() => toggleType(type)}
+                      onSelect={(e) => e.preventDefault()}
+                    >
+                      {type}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
+            {(selectedEpics.length > 0 ||
+              selectedStatuses.length > 0 ||
+              selectedTypes.length > 0) && (
+              <button
+                onClick={clearFilters}
+                className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-full text-muted-foreground hover:bg-secondary/80 hover:text-foreground transition-colors ml-auto"
+                title={t("clearFilters")}
+              >
+                <X className="h-3 w-3" />
+                {t("clearFilters")}
+              </button>
+            )}
+          </div>
+        )}
+
         <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
           {filteredIssues.map((issue: JiraIssue) => (
             <motion.a
@@ -215,9 +421,20 @@ export function JiraWidgetPlaceholder() {
               className="group flex flex-col gap-1 rounded-lg border p-3 hover:bg-accent/50 cursor-pointer transition-colors"
             >
               <div className="flex items-start gap-2 justify-between">
-                <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 shrink-0 group-hover:underline">
-                  {issue.key}
-                </span>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  {issue.iconUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={issue.iconUrl}
+                      alt={issue.type || "Issue type"}
+                      className="w-4 h-4 shrink-0"
+                      title={issue.type}
+                    />
+                  )}
+                  <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 shrink-0 group-hover:underline">
+                    {issue.key}
+                  </span>
+                </div>
                 <span className="text-[10px] bg-secondary px-1.5 py-0.5 rounded text-secondary-foreground shrink-0 border">
                   {issue.status}
                 </span>
@@ -225,13 +442,18 @@ export function JiraWidgetPlaceholder() {
               <p className="text-sm font-medium line-clamp-2 mt-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                 {issue.summary}
               </p>
+              {issue.epic && (
+                <div className="mt-1 flex items-center">
+                  <span className="text-[10px] px-1.5 py-0.5 rounded border border-blue-300 text-blue-600 dark:border-blue-700/50 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-900/20">
+                    {issue.epic}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between items-center mt-2">
                 <span className="text-xs text-muted-foreground">
                   {issue.assignee || t("unassigned")}
                 </span>
-                {/* <span className="text-[10px] text-muted-foreground">
-                  ⏱ {new Date(issue.updated).toLocaleDateString()}
-                </span> */}
+                <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
             </motion.a>
           ))}
@@ -365,16 +587,24 @@ export function CalendarWidgetContent() {
     content = (
       <motion.div
         key="empty"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.2 }}
-        className="flex min-h-[200px] flex-col items-center justify-center gap-2 text-center"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ duration: 0.3 }}
+        className="flex min-h-[220px] flex-col items-center justify-center gap-1.5 p-6 text-center"
       >
-        <div className="rounded-full bg-green-100 p-3 dark:bg-green-900/30">
-          <Check className="h-8 w-8 text-green-600 dark:text-green-400" />
+        <div className="relative mb-3">
+          <div className="absolute inset-0 animate-pulse rounded-full bg-blue-400/20 dark:bg-blue-400/10" />
+          <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-linear-to-br from-blue-100 to-blue-50 border border-blue-200 shadow-inner dark:from-blue-900/40 dark:to-blue-800/20 dark:border-blue-800/50">
+            <Coffee className="h-7 w-7 text-blue-500 dark:text-blue-400 opacity-80" />
+          </div>
         </div>
-        <p className="text-sm text-muted-foreground">{t("noEvents")}</p>
+        <p className="text-sm font-medium text-foreground">
+          {t("noEvents") || "You're all clear!"}
+        </p>
+        <p className="text-xs text-muted-foreground max-w-[200px] leading-relaxed">
+          No events scheduled. Enjoy the free time or focus on your tasks!
+        </p>
       </motion.div>
     );
   } else {
@@ -446,6 +676,7 @@ export function CalendarWidgetContent() {
 
         <div className="space-y-2 max-h-[350px] overflow-y-auto pr-1">
           {filteredTodayEvents.map((event) => {
+            const isAllDay = event.start && !event.start.includes("T");
             const start = event.start ? dayjs(event.start).format("HH:mm") : "";
             const end = event.end ? dayjs(event.end).format("HH:mm") : "";
 
@@ -454,9 +685,9 @@ export function CalendarWidgetContent() {
             const endMs = event.end ? dayjs(event.end).valueOf() : startMs;
 
             let dotColor = "bg-blue-500";
-            if (endMs < nowMs) {
+            if (endMs < nowMs && !isAllDay) {
               dotColor = "bg-gray-400";
-            } else if (startMs <= nowMs && nowMs <= endMs) {
+            } else if (startMs <= nowMs && nowMs <= endMs && !isAllDay) {
               dotColor = "bg-green-500";
             }
 
@@ -496,10 +727,16 @@ export function CalendarWidgetContent() {
                       </span>
                     </div>
                   )}
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {start || "00:00"}
-                    {end && end !== start ? ` – ${end}` : ""}
-                  </p>
+                  {isAllDay ? (
+                    <p className="mt-1 text-[10px] text-muted-foreground uppercase tracking-wider font-medium">
+                      All Day
+                    </p>
+                  ) : (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {start || "00:00"}
+                      {end && end !== start ? ` – ${end}` : ""}
+                    </p>
+                  )}
                   {event.location && (
                     <p className="mt-0.5 truncate text-xs text-muted-foreground">
                       📍 {event.location}
@@ -528,18 +765,30 @@ export function GmailWidgetContent() {
 
   const [searchTerm, setSearchTerm] = useState("");
 
-  const filteredMessages = useMemo(() => {
+  const todayMessages = useMemo(() => {
     if (!messages) return [];
-    if (!searchTerm.trim()) return messages;
+    const todayStart = dayjs().startOf("day").valueOf();
+    const todayEnd = dayjs().endOf("day").valueOf();
+
+    return messages.filter((msg) => {
+      if (!msg.date) return false;
+      const msgTime = dayjs(msg.date).valueOf();
+      return msgTime >= todayStart && msgTime <= todayEnd;
+    });
+  }, [messages]);
+
+  const filteredMessages = useMemo(() => {
+    if (!todayMessages) return [];
+    if (!searchTerm.trim()) return todayMessages;
 
     const lowerTerm = searchTerm.toLowerCase();
-    return messages.filter(
+    return todayMessages.filter(
       (msg) =>
         msg.subject?.toLowerCase().includes(lowerTerm) ||
         msg.from?.toLowerCase().includes(lowerTerm) ||
         msg.snippet?.toLowerCase().includes(lowerTerm),
     );
-  }, [messages, searchTerm]);
+  }, [todayMessages, searchTerm]);
 
   let content;
 
@@ -640,13 +889,16 @@ export function GmailWidgetContent() {
             >
               <div className="flex items-start justify-between gap-2">
                 <p
-                  className={`truncate text-sm group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors ${msg.isUnread ? "font-semibold" : "font-medium"}`}
+                  className={`truncate text-sm group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors flex-1 ${msg.isUnread ? "font-semibold" : "font-medium"}`}
                 >
                   {msg.subject}
                 </p>
-                {msg.isUnread && (
-                  <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-red-500" />
-                )}
+                <div className="flex items-center gap-2 shrink-0">
+                  {msg.isUnread && (
+                    <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-red-500" />
+                  )}
+                  <ExternalLink className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
               </div>
               <p className="mt-0.5 truncate text-xs text-muted-foreground">
                 {msg.from}

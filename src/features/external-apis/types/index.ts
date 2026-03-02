@@ -19,6 +19,9 @@ export interface JiraIssue {
   assignee: string | null;
   priority: string;
   updated: string;
+  epic?: string;
+  type?: string;
+  iconUrl?: string;
 }
 
 export interface JiraSprint {
@@ -78,7 +81,13 @@ export interface JiraSprintIssuesResponse {
       status: { name: string };
       assignee: { displayName: string } | null;
       priority: { name: string | null } | null;
+      issuetype?: { name: string; iconUrl?: string };
       updated: string;
+      parent?: {
+        fields: {
+          summary: string;
+        };
+      };
     };
   }[];
 }

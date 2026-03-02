@@ -5,6 +5,7 @@ import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "next-themes";
 import { useState, type ReactNode } from "react";
 import { SessionGuardian } from "@/components/session-guardian";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 interface ProvidersProps {
   children: ReactNode;
@@ -29,8 +30,10 @@ export function Providers({ children }: ProvidersProps) {
     <SessionProvider>
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
         <QueryClientProvider client={queryClient}>
-          <SessionGuardian />
-          {children}
+          <TooltipProvider>
+            <SessionGuardian />
+            {children}
+          </TooltipProvider>
         </QueryClientProvider>
       </ThemeProvider>
     </SessionProvider>

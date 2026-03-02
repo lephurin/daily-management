@@ -127,7 +127,10 @@
       "noResults": "ไม่พบรายการที่ค้นหา",
       "unassigned": "ยังไม่ได้มอบหมาย",
       "active": "Active",
-      "sprintTitle": "Jira Active Sprint"
+      "sprintTitle": "Jira Active Sprint",
+      "clearFilters": "ล้างทั้งหมด",
+      "endsOn": "สิ้นสุด {date}",
+      "infoTooltip": "แสดงเฉพาะ Issue จาก Active Sprint ปัจจุบัน"
     },
     "calendar": {
       "notConnected": "ลงชื่อเข้าใช้ด้วย Google เพื่อดูปฏิทิน",
@@ -138,13 +141,16 @@
       "statusUpcoming": "ยังไม่ถึง",
       "noResults": "ไม่มีนัดหมายในปฏิทินที่เลือก",
       "retry": "ลองใหม่",
-      "noTitle": "(ไม่มีชื่อ)"
+      "noTitle": "(ไม่มีชื่อ)",
+      "infoTooltip": "แสดงเฉพาะนัดหมายของวันนี้"
     },
     "gmail": {
       "notConnected": "ลงชื่อเข้าใช้ด้วย Google เพื่อดูอีเมล",
       "noEmails": "ไม่มีอีเมลใหม่",
       "searchPlaceholder": "ค้นหา Subject, Sender, Content...",
-      "retry": "ลองใหม่"
+      "noResults": "ไม่พบอีเมลที่ค้นหา",
+      "retry": "ลองใหม่",
+      "infoTooltip": "แสดงเฉพาะอีเมลที่ได้รับในวันนี้"
     },
     "jiraCredentials": {
       "title": "เชื่อมต่อ Jira",

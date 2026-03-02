@@ -56,7 +56,7 @@ export async function fetchJiraActiveSprint(
       {
         headers,
         params: {
-          fields: "summary,status,assignee,priority,updated",
+          fields: "summary,status,assignee,priority,updated,parent,issuetype",
           jql: "assignee=currentUser()",
         },
       },
@@ -76,6 +76,9 @@ export async function fetchJiraActiveSprint(
         assignee: issue.fields.assignee?.displayName || null,
         priority: issue.fields.priority?.name || "",
         updated: issue.fields.updated,
+        epic: issue.fields.parent?.fields.summary,
+        type: issue.fields.issuetype?.name,
+        iconUrl: issue.fields.issuetype?.iconUrl,
       })),
     };
   } catch (error) {

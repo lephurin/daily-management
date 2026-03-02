@@ -127,7 +127,10 @@
       "noResults": "No results found",
       "unassigned": "Unassigned",
       "active": "Active",
-      "sprintTitle": "Jira Active Sprint"
+      "sprintTitle": "Jira Active Sprint",
+      "clearFilters": "Clear filters",
+      "endsOn": "Ends on {date}",
+      "infoTooltip": "Display issues from current Active Sprint only"
     },
     "calendar": {
       "notConnected": "Sign in with Google to view calendar",
@@ -138,13 +141,16 @@
       "statusUpcoming": "Upcoming",
       "noResults": "No appointments in selected calendars",
       "retry": "Try Again",
-      "noTitle": "(No Title)"
+      "noTitle": "(No Title)",
+      "infoTooltip": "Display today's appointments only"
     },
     "gmail": {
       "notConnected": "Sign in with Google to view emails",
       "noEmails": "No new emails",
       "searchPlaceholder": "Search Subject, Sender, Content...",
-      "retry": "Try Again"
+      "noResults": "No results found",
+      "retry": "Try Again",
+      "infoTooltip": "Display emails received today only"
     },
     "jiraCredentials": {
       "title": "Connect Jira",
