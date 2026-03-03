@@ -172,6 +172,31 @@
         "requiredToken": "กรุณาใส่ API Token",
         "requiredBoardId": "กรุณาใส่ Board ID"
       }
+    },
+    "slack": {
+      "notConnected": "Slack ยังไม่ได้เชื่อมต่อ",
+      "noMessages": "ไม่มี Mention หรือ DM ใหม่ภายในวันนี้",
+      "searchPlaceholder": "ค้นหา ผู้ส่ง หรือข้อความ...",
+      "noResults": "ไม่พบรายการที่ค้นหา",
+      "infoTooltip": "แสดง Mention และ DM ทั้งหมดของวันนี้"
+    },
+    "slackCredentials": {
+      "title": "เชื่อมต่อ Slack",
+      "description": "ทำตามขั้นตอนด้านล่างเพื่อขอรับ User OAuth Token:",
+      "step1": "ไปที่ api.slack.com/apps เลือก Create New App > From scratch",
+      "step2": "ไปที่เมนู OAuth & Permissions (ส่วนของ Features ด้านซ้าย)",
+      "step3": "ไปที่หัวข้อ User Token Scopes คลิก Add an OAuth Scope แล้วเพิ่ม 'search:read'",
+      "step4": "ไปที่เมนู Install App เพื่อรับ Token (xoxp-...)",
+      "token": "User OAuth Token",
+      "connecting": "กำลังเชื่อมต่อ...",
+      "connect": "เชื่อมต่อ",
+      "success": "เชื่อมต่อสำเร็จ",
+      "successDesc": "บันทึกข้อมูล Slack Token เรียบร้อยแล้ว",
+      "error": "ข้อผิดพลาด",
+      "errorDesc": "ไม่สามารถบันทึกข้อมูลได้",
+      "validation": {
+        "requiredToken": "กรุณาใส่ Token"
+      }
     }
   },
   "Members": {

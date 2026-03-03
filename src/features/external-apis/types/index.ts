@@ -61,6 +61,16 @@ export interface GmailMessage {
   isUnread: boolean;
 }
 
+export interface SlackMessage {
+  id: string;
+  sender: string;
+  channel: string;
+  snippet: string;
+  timestamp: string;
+  timestampMs: number;
+  link: string;
+}
+
 // Raw API Response Interfaces
 export interface JiraBoardSprintResponse {
   values: {
@@ -134,4 +144,18 @@ export interface GoogleTokenResponse {
   access_token: string;
   expires_in: number;
   refresh_token?: string;
+}
+
+export interface SlackSearchMessagesResponse {
+  ok: boolean;
+  messages: {
+    matches: {
+      iid: string;
+      channel: { name: string };
+      username: string;
+      text: string;
+      permalink: string;
+      ts: string;
+    }[];
+  };
 }

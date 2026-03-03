@@ -8,11 +8,10 @@ import dayjs from "dayjs";
 import { useDashboardStore } from "@/features/dashboard/store/dashboard-store";
 import { DashboardWidget } from "./dashboard-widget";
 import { ManageWidgetsPanel } from "./manage-widgets-panel";
-import {
-  JiraWidgetPlaceholder,
-  CalendarWidgetContent,
-  GmailWidgetContent,
-} from "./widget-placeholders";
+import { JiraWidgetPlaceholder } from "./jira-widget";
+import { CalendarWidgetContent } from "./calendar-widget";
+import { GmailWidgetContent } from "./gmail-widget";
+import { SlackWidgetContent } from "./slack-widget";
 
 import { useTranslations } from "next-intl";
 import { useDashboardPersistence } from "../hooks/use-dashboard-persistence";
@@ -21,6 +20,7 @@ const widgetContentMap: Record<string, React.ComponentType> = {
   "jira-widget": JiraWidgetPlaceholder,
   "calendar-widget": CalendarWidgetContent,
   "gmail-widget": GmailWidgetContent,
+  "slack-widget": SlackWidgetContent,
 };
 
 export function DashboardGrid() {

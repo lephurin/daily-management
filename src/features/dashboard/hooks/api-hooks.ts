@@ -4,6 +4,7 @@ import type {
   GmailMessage,
   JiraSprint,
   JiraActiveSprint,
+  SlackMessage,
 } from "@/features/external-apis/types";
 import { axios } from "@/lib/axios";
 import { decryptData } from "@/lib/encryption";
@@ -147,5 +148,33 @@ export function useJiraActiveSprintQuery(userId?: string | null) {
       return { ...sprintData, baseUrl: creds.baseUrl as string };
     },
     refetchOnWindowFocus: false,
+  });
+}
+
+export function useSlackTodayQuery(userId?: string | null) {
+  return useQuery({
+    queryKey: ["slack-messages", userId],
+    queryFn: async () => {
+      // Note: This runs on the client so localStorage is available.
+      if (!userId) throw new Error("CREDENTIALS_NOT_FOUND");
+      const encryptedStr = localStorage.getItem(`slack_credentials_${userId}`);
+      if (!encryptedStr) throw new Error("CREDENTIALS_NOT_FOUND");
+
+      const decryptedStr = decryptData(encryptedStr);
+      if (!decryptedStr) throw new Error("DECRYPT_FAILED");
+
+      const creds = JSON.parse(decryptedStr);
+      if (!creds.token) {
+        throw new Error("INVALID_CREDENTIALS");
+      }
+
+      const response = await axios.post("/api/slack-message", {
+        token: creds.token,
+      });
+
+      return (response.data?.data || response.data) as SlackMessage[];
+    },
+    refetchOnWindowFocus: false,
+    retry: false, // Don't retry if credentials are missing
   });
 }

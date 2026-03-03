@@ -12,6 +12,8 @@ import type {
   GoogleCalendarEventsResponse,
   GmailListResponse,
   GmailMessageDetailResponse,
+  SlackMessage,
+  SlackSearchMessagesResponse,
 } from "@/features/external-apis/types";
 
 /**
@@ -249,5 +251,149 @@ export async function fetchGmailMessages(): Promise<GmailMessage[]> {
   } catch (error) {
     console.error("Failed to fetch Gmail messages:", error);
     return [];
+  }
+}
+
+/**
+ * Fetch Slack Mentions & DMs for today
+ */
+export async function fetchSlackTodayMessages(
+  token: string,
+): Promise<SlackMessage[]> {
+  try {
+    // 1. Get current user ID to search for mentions
+    const authRes = (await axios.post(
+      `https://slack.com/api/auth.test`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    )) as unknown as { ok: boolean; user_id?: string; error?: string };
+
+    if (!authRes || !authRes.ok || !authRes.user_id) {
+      console.error("Slack auth error:", authRes);
+      throw new Error(`Slack Auth error: ${authRes?.error || "unauthorized"}`);
+    }
+
+    const userId = authRes.user_id;
+
+    // 2. Fetch Recent DMs (to:me) and Mentions (<@userId>) concurrently
+    // Slack search doesn't support OR natively between different modifiers efficiently
+    const [dmData, mentionData] = await Promise.all([
+      axios
+        .get<SlackSearchMessagesResponse>(
+          `https://slack.com/api/search.messages`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            params: {
+              query: "to:me",
+              sort: "timestamp",
+              sort_dir: "desc",
+              count: 20,
+            },
+          },
+        )
+        .then((res) => res as unknown as SlackSearchMessagesResponse)
+        .catch((err) => {
+          console.error("Slack DM fetch error:", err);
+          return {
+            ok: false,
+            error: err.message,
+          } as unknown as SlackSearchMessagesResponse;
+        }),
+      axios
+        .get<SlackSearchMessagesResponse>(
+          `https://slack.com/api/search.messages`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            params: {
+              query: `<@${userId}>`,
+              sort: "timestamp",
+              sort_dir: "desc",
+              count: 20,
+            },
+          },
+        )
+        .then((res) => res as unknown as SlackSearchMessagesResponse)
+        .catch((err) => {
+          console.error("Slack mention fetch error:", err);
+          return {
+            ok: false,
+            error: err.message,
+          } as unknown as SlackSearchMessagesResponse;
+        }),
+    ]);
+
+    if (!dmData?.ok && !mentionData?.ok) {
+      const err =
+        (dmData as unknown as { error?: string })?.error ||
+        (mentionData as unknown as { error?: string })?.error ||
+        "unknown";
+      throw new Error(`Slack API error: ${err}`);
+    }
+
+    const allMatches = [
+      ...(dmData?.messages?.matches || []),
+      ...(mentionData?.messages?.matches || []),
+    ];
+
+    // Deduplicate array by match ID or timestamp
+    const uniqueMatchesMap = new Map();
+    for (const match of allMatches) {
+      if (!match) continue;
+      const id = match.iid || match.ts;
+      if (!uniqueMatchesMap.has(id)) {
+        uniqueMatchesMap.set(id, match);
+      }
+    }
+
+    let matches = Array.from(uniqueMatchesMap.values());
+
+    // Filter by today and sort descending by timestamp
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const startMs = startOfToday.getTime();
+
+    matches = matches.filter((m) => {
+      const tsMs = m.ts ? parseFloat(m.ts) * 1000 : 0;
+      return tsMs >= startMs;
+    });
+
+    matches.sort((a, b) => {
+      const tsA = a.ts ? parseFloat(a.ts) : 0;
+      const tsB = b.ts ? parseFloat(b.ts) : 0;
+      return tsB - tsA;
+    });
+
+    matches = matches.slice(0, 20); // Keep only top 20
+
+    return matches.map((match) => {
+      // Convert Slack timestamp (seconds since epoch) to a readable format
+      // the match.ts is a string like "1620000000.000100"
+      const timestampMs = match.ts ? parseFloat(match.ts) * 1000 : Date.now();
+      const date = new Date(timestampMs);
+      const timeString = date.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      });
+
+      return {
+        id: match.iid || match.ts,
+        sender: match.username || "Unknown",
+        channel: match.channel?.name
+          ? `#${match.channel.name}`
+          : "Direct Message",
+        snippet: match.text || "",
+        timestamp: timeString,
+        timestampMs,
+        link: match.permalink || "",
+      };
+    });
+  } catch (error) {
+    console.error("Failed to fetch Slack messages:", error);
+    throw error;
   }
 }

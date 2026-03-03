@@ -3,12 +3,12 @@ import { create } from "zustand";
 export interface WidgetConfig {
   id: string;
   title: string;
-  type: "jira" | "calendar" | "gmail";
+  type: "jira" | "calendar" | "gmail" | "slack";
   size: "small" | "medium" | "large";
   visible: boolean;
 }
 
-const DEFAULT_WIDGETS: WidgetConfig[] = [
+export const DEFAULT_WIDGETS: WidgetConfig[] = [
   {
     id: "jira-widget",
     title: "Jira Tasks",
@@ -27,6 +27,13 @@ const DEFAULT_WIDGETS: WidgetConfig[] = [
     id: "gmail-widget",
     title: "Gmail",
     type: "gmail",
+    size: "medium",
+    visible: true,
+  },
+  {
+    id: "slack-widget",
+    title: "Slack Today",
+    type: "slack",
     size: "medium",
     visible: true,
   },

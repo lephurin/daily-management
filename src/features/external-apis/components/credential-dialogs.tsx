@@ -183,3 +183,129 @@ export function JiraCredentialDialog({ trigger }: { trigger?: ReactNode }) {
     </Dialog>
   );
 }
+
+export function SlackCredentialDialog({ trigger }: { trigger?: ReactNode }) {
+  const t = useTranslations("Widgets.slackCredentials");
+  const [open, setOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const { data: session } = useSession();
+  const userId = session?.user?.id;
+
+  const slackSchema = z.object({
+    token: z.string().min(1, t("validation.requiredToken")),
+  });
+
+  type SlackFormData = z.infer<typeof slackSchema>;
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<SlackFormData>({
+    resolver: zodResolver(slackSchema),
+    defaultValues: {
+      token: "",
+    },
+  });
+
+  useEffect(() => {
+    if (open && userId) {
+      const encryptedData = localStorage.getItem(`slack_credentials_${userId}`);
+      if (encryptedData) {
+        try {
+          const decryptedStr = decryptData(encryptedData);
+          if (decryptedStr) {
+            const parsed = JSON.parse(decryptedStr);
+            reset(parsed);
+          }
+        } catch (error) {
+          console.error("Failed to parse existing slack credentials", error);
+        }
+      }
+    }
+  }, [open, reset, userId]);
+
+  const onSubmit = async (data: SlackFormData) => {
+    try {
+      const jsonString = JSON.stringify(data);
+      const encryptedData = encryptData(jsonString);
+
+      if (userId) {
+        localStorage.setItem(`slack_credentials_${userId}`, encryptedData);
+      }
+
+      toast.success(t("success"), {
+        description: t("successDesc"),
+      });
+
+      setOpen(false);
+
+      // Invalidate the query to refresh the widget
+      queryClient.invalidateQueries({ queryKey: ["slack-today"] });
+    } catch (error) {
+      console.error("Failed to save Slack credentials:", error);
+      toast.error(t("error"), {
+        description: t("errorDesc"),
+      });
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        {trigger || (
+          <Button variant="outline" size="sm">
+            {t("connect")}
+          </Button>
+        )}
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{t("title")}</DialogTitle>
+          <div className="text-sm text-muted-foreground mt-2">
+            <p>{t("description")}</p>
+            <div className="bg-muted/30 p-3 rounded-md space-y-2 mt-3 inline-block text-left w-full border text-xs">
+              <ol className="list-decimal pl-4 space-y-1.5 marker:text-primary marker:font-medium">
+                <li>{t("step1")}</li>
+                <li>{t("step2")}</li>
+                <li>{t("step3")}</li>
+                <li>{t("step4")}</li>
+              </ol>
+            </div>
+          </div>
+        </DialogHeader>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="space-y-2">
+            <div className="flex items-center gap-1.5">
+              <Label htmlFor="slack-token">{t("token")}</Label>
+              <a
+                href="https://api.slack.com/apps"
+                target="_blank"
+                rel="noopener noreferrer"
+                title={t("token")}
+                className="text-blue-500 hover:text-blue-600 transition-colors"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+            </div>
+            <Input
+              id="slack-token"
+              type="password"
+              placeholder="xoxp-..."
+              {...register("token")}
+            />
+            {errors.token && (
+              <p className="text-xs text-red-500">{errors.token.message}</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button type="submit" disabled={isSubmitting} className="w-full">
+              {isSubmitting ? t("connecting") : t("connect")}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

@@ -2,7 +2,11 @@
 
 import { useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
-import { useDashboardStore, WidgetConfig } from "../store/dashboard-store";
+import {
+  useDashboardStore,
+  WidgetConfig,
+  DEFAULT_WIDGETS,
+} from "../store/dashboard-store";
 
 const STORAGE_KEY_PREFIX = "dashboard-layout-";
 
@@ -23,7 +27,27 @@ export function useDashboardPersistence() {
       try {
         const parsedLayout = JSON.parse(savedLayout) as WidgetConfig[];
         if (Array.isArray(parsedLayout) && parsedLayout.length > 0) {
-          setWidgets(parsedLayout);
+          // Merge parsed layout with DEFAULT_WIDGETS to support newly added widgets
+          let mergedLayout = [...parsedLayout];
+          DEFAULT_WIDGETS.forEach((defaultWidget) => {
+            const exists = mergedLayout.some((w) => w.id === defaultWidget.id);
+            if (!exists) {
+              mergedLayout.push(defaultWidget);
+            }
+          });
+
+          // Override local titles with DEFAULT_WIDGETS titles
+          // to push static changes (like "Slack Unread" -> "Slack Today")
+          mergedLayout = mergedLayout.map((widget) => {
+            const defaultEquivalent = DEFAULT_WIDGETS.find(
+              (dw) => dw.id === widget.id,
+            );
+            return defaultEquivalent
+              ? { ...widget, title: defaultEquivalent.title }
+              : widget;
+          });
+
+          setWidgets(mergedLayout);
         }
       } catch (error) {
         console.error(
