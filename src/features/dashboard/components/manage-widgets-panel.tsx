@@ -118,7 +118,7 @@ function SortablePlaylistItem({ widget }: { widget: WidgetConfig }) {
   );
 }
 
-export function ManageWidgetsPanel() {
+export function ManageWidgetsPanel({ trigger }: { trigger?: React.ReactNode }) {
   const t = useTranslations("DashboardGrid");
   const { widgets, setWidgets, toggleWidgetVisibility } = useDashboardStore();
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -157,10 +157,12 @@ export function ManageWidgetsPanel() {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
-          <Settings2 className="h-4 w-4" />
-          {t("manageLayout")}
-        </Button>
+        {trigger || (
+          <Button variant="outline" size="sm" className="gap-2">
+            <Settings2 className="h-4 w-4" />
+            {t("manageLayout")}
+          </Button>
+        )}
       </SheetTrigger>
       <SheetContent
         side="left"

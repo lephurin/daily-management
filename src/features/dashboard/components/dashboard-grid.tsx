@@ -2,7 +2,13 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { RefreshCw, Settings2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import dayjs from "dayjs";
 import { useDashboardStore } from "@/features/dashboard/store/dashboard-store";
@@ -74,34 +80,56 @@ export function DashboardGrid() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center bg-card p-3 rounded-lg border shadow-sm">
-        <ManageWidgetsPanel />
-        <div className="flex items-center gap-3">
-          {lastUpdated === "failed" ? (
-            <span className="text-xs text-destructive animate-in fade-in duration-500 font-medium">
-              {t("updateFailed")}
-            </span>
-          ) : lastUpdated ? (
-            <span className="text-xs text-muted-foreground animate-in fade-in duration-500">
-              {t("lastUpdated", {
-                date: dayjs(lastUpdated).format("MMMM D, YYYY HH:mm"),
-              })}
-            </span>
-          ) : null}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleManualReload}
-            disabled={isReloading}
-            className="gap-2"
-          >
-            <RefreshCw
-              className={`h-4 w-4 ${isReloading ? "animate-spin" : ""}`}
+    <div className="space-y-4 relative">
+      <div className="flex items-center justify-end pr-2 pt-2 gap-2">
+        {lastUpdated === "failed" ? (
+          <span className="text-xs text-destructive animate-in fade-in duration-500 font-medium bg-card/50 backdrop-blur py-1 px-2 rounded-md">
+            {t("updateFailed")}
+          </span>
+        ) : lastUpdated ? (
+          <span className="text-xs text-muted-foreground animate-in fade-in duration-500 bg-card/50 backdrop-blur py-1 px-2 rounded-md">
+            {t("lastUpdated", {
+              date: dayjs(lastUpdated).format("MMMM D, YYYY HH:mm"),
+            })}
+          </span>
+        ) : null}
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleManualReload}
+          disabled={isReloading}
+          className="gap-2 bg-card/50 backdrop-blur"
+        >
+          <RefreshCw
+            className={`h-4 w-4 ${isReloading ? "animate-spin" : ""}`}
+          />
+          {isReloading ? t("reloading") : t("reload")}
+        </Button>
+      </div>
+
+      {/* Floating Action Menu */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
+        <TooltipProvider>
+          <Tooltip delayDuration={300}>
+            <ManageWidgetsPanel
+              trigger={
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="default"
+                    size="icon"
+                    className="h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-all"
+                  >
+                    <Settings2 className="h-5 w-5" />
+                  </Button>
+                </TooltipTrigger>
+              }
             />
-            {isReloading ? t("reloading") : t("reload")}
-          </Button>
-        </div>
+            <TooltipContent side="left" className="mr-2 font-medium">
+              <p>{t("manageLayout")}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 grid-flow-dense pb-8">
