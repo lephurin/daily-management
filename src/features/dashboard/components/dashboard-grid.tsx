@@ -21,6 +21,7 @@ import { SlackWidgetContent } from "./slack-widget";
 
 import { useTranslations } from "next-intl";
 import { useDashboardPersistence } from "../hooks/use-dashboard-persistence";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 const widgetContentMap: Record<string, React.ComponentType> = {
   "jira-widget": JiraWidgetPlaceholder,
@@ -32,8 +33,21 @@ const widgetContentMap: Record<string, React.ComponentType> = {
 export function DashboardGrid() {
   useDashboardPersistence();
   const t = useTranslations("DashboardGrid");
-  const { widgets } = useDashboardStore();
-  const visibleWidgets = widgets.filter((w) => w.visible);
+  const { layouts } = useDashboardStore();
+  const isMobile = useMediaQuery("(max-width: 767px)");
+
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const currentLayout = mounted
+    ? isMobile
+      ? layouts.mobile
+      : layouts.desktop
+    : layouts.desktop;
+  const visibleWidgets = currentLayout.filter((w) => w.visible);
 
   const queryClient = useQueryClient();
   const [isReloading, setIsReloading] = useState(false);

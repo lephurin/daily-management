@@ -140,6 +140,7 @@ export function ManageWidgetsPanel({ trigger }: { trigger?: React.ReactNode }) {
   const isMobileScreen = useMediaQuery("(max-width: 767px)");
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 

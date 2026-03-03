@@ -40,49 +40,81 @@ export const DEFAULT_WIDGETS: WidgetConfig[] = [
 ];
 
 interface DashboardStore {
-  widgets: WidgetConfig[];
-  setWidgets: (widgets: WidgetConfig[]) => void;
-  reorderWidgets: (activeId: string, overId: string) => void;
-  toggleWidgetVisibility: (widgetId: string) => void;
-  toggleWidgetSize: (widgetId: string) => void;
+  layouts: {
+    desktop: WidgetConfig[];
+    mobile: WidgetConfig[];
+  };
+  setLayouts: (layouts: {
+    desktop: WidgetConfig[];
+    mobile: WidgetConfig[];
+  }) => void;
+  reorderWidgets: (
+    activeId: string,
+    overId: string,
+    breakpoint: "desktop" | "mobile",
+  ) => void;
+  toggleWidgetVisibility: (
+    widgetId: string,
+    breakpoint: "desktop" | "mobile",
+  ) => void;
+  toggleWidgetSize: (
+    widgetId: string,
+    breakpoint: "desktop" | "mobile",
+  ) => void;
 }
 
 export const useDashboardStore = create<DashboardStore>((set) => ({
-  widgets: DEFAULT_WIDGETS,
+  layouts: {
+    desktop: DEFAULT_WIDGETS,
+    mobile: DEFAULT_WIDGETS,
+  },
 
-  setWidgets: (widgets) => set({ widgets }),
+  setLayouts: (layouts) => set({ layouts }),
 
-  reorderWidgets: (activeId, overId) =>
+  reorderWidgets: (activeId, overId, breakpoint) =>
     set((state) => {
-      const oldIndex = state.widgets.findIndex((w) => w.id === activeId);
-      const newIndex = state.widgets.findIndex((w) => w.id === overId);
+      const widgets = state.layouts[breakpoint];
+      const oldIndex = widgets.findIndex((w) => w.id === activeId);
+      const newIndex = widgets.findIndex((w) => w.id === overId);
       if (oldIndex === -1 || newIndex === -1) return state;
 
-      const newWidgets = [...state.widgets];
+      const newWidgets = [...widgets];
       const [removed] = newWidgets.splice(oldIndex, 1);
       newWidgets.splice(newIndex, 0, removed);
 
-      // TODO: Sync with Supabase user_settings
-      return { widgets: newWidgets };
+      return {
+        layouts: {
+          ...state.layouts,
+          [breakpoint]: newWidgets,
+        },
+      };
     }),
 
-  toggleWidgetVisibility: (widgetId) =>
+  toggleWidgetVisibility: (widgetId, breakpoint) =>
     set((state) => ({
-      widgets: state.widgets.map((w) =>
-        w.id === widgetId ? { ...w, visible: !w.visible } : w,
-      ),
+      layouts: {
+        ...state.layouts,
+        [breakpoint]: state.layouts[breakpoint].map((w) =>
+          w.id === widgetId ? { ...w, visible: !w.visible } : w,
+        ),
+      },
     })),
 
-  toggleWidgetSize: (widgetId) =>
+  toggleWidgetSize: (widgetId, breakpoint) =>
     set((state) => ({
-      widgets: state.widgets.map((w) =>
-        w.id === widgetId
-          ? {
-              ...w,
-              size:
-                w.size === "medium" || w.size === "small" ? "large" : "medium",
-            }
-          : w,
-      ),
+      layouts: {
+        ...state.layouts,
+        [breakpoint]: state.layouts[breakpoint].map((w) =>
+          w.id === widgetId
+            ? {
+                ...w,
+                size:
+                  w.size === "medium" || w.size === "small"
+                    ? "large"
+                    : "medium",
+              }
+            : w,
+        ),
+      },
     })),
 }));

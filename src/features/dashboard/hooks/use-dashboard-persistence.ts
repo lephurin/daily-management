@@ -12,7 +12,7 @@ const STORAGE_KEY_PREFIX = "dashboard-layout-";
 
 export function useDashboardPersistence() {
   const { data: session } = useSession();
-  const { widgets, setWidgets } = useDashboardStore();
+  const { layouts, setLayouts } = useDashboardStore();
   const userId = session?.user?.id;
   const isInitialLoad = useRef(true);
 
@@ -25,10 +25,27 @@ export function useDashboardPersistence() {
 
     if (savedLayout) {
       try {
-        const parsedLayout = JSON.parse(savedLayout) as WidgetConfig[];
-        if (Array.isArray(parsedLayout) && parsedLayout.length > 0) {
-          // Merge parsed layout with DEFAULT_WIDGETS to support newly added widgets
-          let mergedLayout = [...parsedLayout];
+        const parsedData = JSON.parse(savedLayout);
+
+        // Handle migration from legacy format (Array) to new format (Object with views)
+        let parsedDesktop: WidgetConfig[] = DEFAULT_WIDGETS;
+        let parsedMobile: WidgetConfig[] = DEFAULT_WIDGETS;
+
+        if (Array.isArray(parsedData) && parsedData.length > 0) {
+          parsedDesktop = parsedData;
+          parsedMobile = [...parsedData]; // Deep copy for mobile
+        } else if (
+          parsedData &&
+          typeof parsedData === "object" &&
+          parsedData.desktop &&
+          parsedData.mobile
+        ) {
+          parsedDesktop = parsedData.desktop;
+          parsedMobile = parsedData.mobile;
+        }
+
+        const mergeWithDefaults = (layout: WidgetConfig[]) => {
+          const mergedLayout = [...layout];
           DEFAULT_WIDGETS.forEach((defaultWidget) => {
             const exists = mergedLayout.some((w) => w.id === defaultWidget.id);
             if (!exists) {
@@ -37,8 +54,7 @@ export function useDashboardPersistence() {
           });
 
           // Override local titles with DEFAULT_WIDGETS titles
-          // to push static changes (like "Slack Unread" -> "Slack Today")
-          mergedLayout = mergedLayout.map((widget) => {
+          return mergedLayout.map((widget) => {
             const defaultEquivalent = DEFAULT_WIDGETS.find(
               (dw) => dw.id === widget.id,
             );
@@ -46,9 +62,12 @@ export function useDashboardPersistence() {
               ? { ...widget, title: defaultEquivalent.title }
               : widget;
           });
+        };
 
-          setWidgets(mergedLayout);
-        }
+        setLayouts({
+          desktop: mergeWithDefaults(parsedDesktop),
+          mobile: mergeWithDefaults(parsedMobile),
+        });
       } catch (error) {
         console.error(
           "Failed to parse dashboard layout from localStorage:",
@@ -58,13 +77,13 @@ export function useDashboardPersistence() {
     }
 
     isInitialLoad.current = false;
-  }, [userId, setWidgets]);
+  }, [userId, setLayouts]);
 
   // Save to localStorage on widget changes
   useEffect(() => {
     if (!userId || isInitialLoad.current) return;
 
     const storageKey = `${STORAGE_KEY_PREFIX}${userId}`;
-    localStorage.setItem(storageKey, JSON.stringify(widgets));
-  }, [widgets, userId]);
+    localStorage.setItem(storageKey, JSON.stringify(layouts));
+  }, [layouts, userId]);
 }
