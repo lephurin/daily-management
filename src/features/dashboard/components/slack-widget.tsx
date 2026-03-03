@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { SlackCredentialDialog } from "@/features/external-apis/components/credential-dialogs";
 import { motion, AnimatePresence } from "framer-motion";
 import { Settings, Search, ExternalLink, Slack } from "lucide-react";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import Lottie from "lottie-react";
 import emptyAnimation from "@/assets/animations/empty-box.json";
@@ -38,27 +38,14 @@ export function SlackWidgetContent() {
   const { data: session } = useSession();
   const userId = session?.user?.id;
 
-  const [hasCredentials, setHasCredentials] = useState<boolean | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
   const {
     data: messages = [],
     isLoading,
+    error,
     isError,
-  } = useSlackTodayQuery(hasCredentials ? userId : null);
-
-  // Simulated query check
-  useEffect(() => {
-    const checkCreds = () => {
-      if (userId) {
-        const creds = localStorage.getItem(`slack_credentials_${userId}`);
-        setHasCredentials(!!creds);
-      } else {
-        setHasCredentials(false);
-      }
-    };
-    checkCreds();
-  }, [userId]);
+  } = useSlackTodayQuery(userId);
 
   const filteredMessages = useMemo(() => {
     if (!searchTerm.trim()) return messages;
@@ -71,14 +58,14 @@ export function SlackWidgetContent() {
     );
   }, [searchTerm, messages]);
 
-  // Loading state while checking localStorage to prevent hydration mismatch
-  if (hasCredentials === null) {
-    return null;
-  }
+  const isCredentialsError =
+    error?.message === "CREDENTIALS_NOT_FOUND" ||
+    error?.message === "DECRYPT_FAILED" ||
+    error?.message === "INVALID_CREDENTIALS";
 
   let content;
 
-  if (!hasCredentials) {
+  if (isCredentialsError) {
     content = (
       <motion.div
         key="no-creds"

@@ -242,7 +242,7 @@ export function SlackCredentialDialog({ trigger }: { trigger?: ReactNode }) {
       setOpen(false);
 
       // Invalidate the query to refresh the widget
-      queryClient.invalidateQueries({ queryKey: ["slack-today"] });
+      queryClient.invalidateQueries({ queryKey: ["slack-messages"] });
     } catch (error) {
       console.error("Failed to save Slack credentials:", error);
       toast.error(t("error"), {
