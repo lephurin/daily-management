@@ -2,8 +2,6 @@ import {
   useDashboardStore,
   type WidgetConfig,
 } from "@/features/dashboard/store/dashboard-store";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Monitor, Smartphone } from "lucide-react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import {
   Sheet,
@@ -41,7 +39,7 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const sizeClasses: Record<WidgetConfig["size"], string> = {
   small: "col-span-1",
@@ -66,8 +64,6 @@ function SortablePlaylistItem({
     transition,
     isDragging,
   } = useSortable({ id: widget.id });
-
-  const isMobileLayout = breakpoint === "mobile";
 
   const isMobileLayout = breakpoint === "mobile";
 
@@ -151,13 +147,13 @@ export function ManageWidgetsPanel({ trigger }: { trigger?: React.ReactNode }) {
 
   // We enforce the active tab state based on the actual screen dimensions.
   // A desktop user will only see desktop grid, a mobile user only sees mobile.
-  const activeTab = mounted
+  const breakpointStr = mounted
     ? isMobileScreen
       ? "mobile"
       : "desktop"
     : "desktop";
 
-  const widgets = layouts[activeTab];
+  const widgets = layouts[breakpointStr];
 
   const activeWidgets = widgets.filter((w) => w.visible);
   const inactiveWidgets = widgets.filter((w) => !w.visible);
@@ -186,7 +182,7 @@ export function ManageWidgetsPanel({ trigger }: { trigger?: React.ReactNode }) {
       const newWidgets = arrayMove(widgets, oldIndex, newIndex);
       setLayouts({
         ...layouts,
-        [activeTab]: newWidgets,
+        [breakpointStr]: newWidgets,
       });
     }
   };
@@ -213,156 +209,137 @@ export function ManageWidgetsPanel({ trigger }: { trigger?: React.ReactNode }) {
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto space-y-8 pr-2 pb-8">
-          <Tabs
-            value={activeTab}
-            onValueChange={(v: string) =>
-              setActiveTab(v as "desktop" | "mobile")
-            }
-            className="w-full"
-          >
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="desktop" className="flex items-center gap-2">
-                <Monitor className="h-4 w-4" />
-                Desktop
-              </TabsTrigger>
-              <TabsTrigger value="mobile" className="flex items-center gap-2">
-                <Smartphone className="h-4 w-4" />
-                Mobile
-              </TabsTrigger>
-            </TabsList>
+          {/* Active Widgets Grid Preview */}
+          <div>
+            <h3 className="text-sm font-semibold mb-3 text-foreground flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-green-500" />
+              {t("activeWidgets", { count: activeWidgets.length })}
+            </h3>
 
-            <TabsContent
-              value={activeTab}
-              className="space-y-8 mt-0 border-none p-0 outline-none"
-            >
-              {/* Active Widgets Grid Preview */}
-              <div>
-                <h3 className="text-sm font-semibold mb-3 text-foreground flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-green-500" />
-                  {t("activeWidgets", { count: activeWidgets.length })}
-                </h3>
-
-                {activeWidgets.length === 0 ? (
-                  <div className="text-sm text-muted-foreground p-4 text-center border border-dashed rounded-lg bg-muted/30">
-                    {t("noActive")}
-                  </div>
-                ) : (
-                  <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragStart={handleDragStart}
-                    onDragEnd={handleDragEnd}
-                  >
-                    <SortableContext
-                      items={activeWidgets.map((w) => w.id)}
-                      strategy={rectSortingStrategy}
-                    >
-                      <div
-                        className={`grid gap-2 grid-flow-dense ${
-                          activeTab === "desktop"
-                            ? "grid-cols-2"
-                            : "grid-cols-1"
-                        }`}
-                      >
-                        {activeWidgets.map((widget) => (
-                          <SortablePlaylistItem
-                            key={widget.id}
-                            widget={widget}
-                            breakpoint={activeTab}
-                          />
-                        ))}
-                      </div>
-                    </SortableContext>
-
-                    <DragOverlay>
-                      {activeId && activeWidget ? (
-                        <div
-                          className={`flex flex-col justify-between p-3 bg-card border ring-2 ring-primary rounded-lg shadow-xl opacity-90 ${
-                            activeTab === "desktop"
-                              ? sizeClasses[activeWidget.size]
-                              : "col-span-1"
-                          }`}
-                        >
-                          <div className="flex items-start justify-between gap-2 mb-2">
-                            <div className="flex items-center gap-2 overflow-hidden">
-                              <GripVertical className="h-4 w-4 shrink-0 text-muted-foreground" />
-                              <span className="text-sm font-semibold truncate">
-                                {activeWidget.title}
-                              </span>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6 text-muted-foreground shrink-0"
-                              disabled
-                            >
-                              <Minus className="h-4 w-4" />
-                            </Button>
-                          </div>
-                          <div className="flex justify-between items-center mt-auto pt-2 border-t">
-                            <span className="text-xs text-muted-foreground">
-                              {activeWidget.size === "large"
-                                ? t("fullWidth")
-                                : t("halfWidth")}
-                            </span>
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              className="h-6 px-2 text-[10px] text-muted-foreground"
-                              disabled
-                            >
-                              <LayoutTemplate className="h-3 w-3 mr-1" />
-                              {activeWidget.size === "large" ? "2:2" : "1:1"}
-                            </Button>
-                          </div>
-                        </div>
-                      ) : null}
-                    </DragOverlay>
-                  </DndContext>
-                )}
+            {activeWidgets.length === 0 ? (
+              <div className="text-sm text-muted-foreground p-4 text-center border border-dashed rounded-lg bg-muted/30">
+                {t("noActive")}
               </div>
-
-              {/* Inactive Widgets List */}
-              <div>
-                <h3 className="text-sm font-semibold mb-3 text-muted-foreground flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-muted-foreground/30" />
-                  {t("hiddenWidgets", { count: inactiveWidgets.length })}
-                </h3>
-
-                <div className="space-y-2">
-                  {inactiveWidgets.length === 0 ? (
-                    <div className="text-sm text-muted-foreground p-4 text-center border border-dashed rounded-lg bg-muted/10">
-                      {t("noHidden")}
-                    </div>
-                  ) : (
-                    inactiveWidgets.map((widget) => (
-                      <div
+            ) : (
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={activeWidgets.map((w) => w.id)}
+                  strategy={rectSortingStrategy}
+                >
+                  <div
+                    className={`grid gap-2 grid-flow-dense ${
+                      isMobileScreen ? "grid-cols-1" : "grid-cols-2"
+                    }`}
+                  >
+                    {activeWidgets.map((widget) => (
+                      <SortablePlaylistItem
                         key={widget.id}
-                        className="flex items-center justify-between p-3 bg-muted/20 border border-dashed rounded-lg"
-                      >
-                        <div className="flex items-center space-x-3 opacity-70">
-                          <span className="text-sm font-medium pl-1">
-                            {widget.title}
+                        widget={widget}
+                        breakpoint={breakpointStr}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+
+                <DragOverlay>
+                  {activeId && activeWidget ? (
+                    <div
+                      className={`flex flex-col justify-between p-3 bg-card border ring-2 ring-primary rounded-lg shadow-xl opacity-90 ${
+                        isMobileScreen
+                          ? "col-span-1"
+                          : sizeClasses[activeWidget.size]
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="flex items-center gap-2 overflow-hidden">
+                          <GripVertical className="h-4 w-4 shrink-0 text-muted-foreground" />
+                          <span className="text-sm font-semibold truncate">
+                            {activeWidget.title}
                           </span>
                         </div>
                         <Button
-                          variant="secondary"
+                          variant="ghost"
                           size="icon"
-                          className="h-7 w-7 text-muted-foreground hover:text-primary shrink-0 transition-colors"
-                          onClick={() =>
-                            toggleWidgetVisibility(widget.id, activeTab)
-                          }
-                          title={t("showWidget")}
+                          className="h-6 w-6 text-muted-foreground shrink-0"
+                          disabled
                         >
-                          <Plus className="h-4 w-4" />
+                          <Minus className="h-4 w-4" />
                         </Button>
                       </div>
-                    ))
-                  )}
+
+                      {isMobileScreen ? (
+                        <div className="flex justify-between items-center mt-auto pt-2 border-t text-muted-foreground">
+                          <span className="text-xs">{t("fullWidth")}</span>
+                        </div>
+                      ) : (
+                        <div className="flex justify-between items-center mt-auto pt-2 border-t">
+                          <span className="text-xs text-muted-foreground">
+                            {activeWidget.size === "large"
+                              ? t("fullWidth")
+                              : t("halfWidth")}
+                          </span>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="h-6 px-2 text-[10px] text-muted-foreground"
+                            disabled
+                          >
+                            <LayoutTemplate className="h-3 w-3 mr-1" />
+                            {activeWidget.size === "large" ? "2:2" : "1:1"}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ) : null}
+                </DragOverlay>
+              </DndContext>
+            )}
+          </div>
+
+          {/* Inactive Widgets List */}
+          <div>
+            <h3 className="text-sm font-semibold mb-3 text-muted-foreground flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-muted-foreground/30" />
+              {t("hiddenWidgets", { count: inactiveWidgets.length })}
+            </h3>
+
+            <div className="space-y-2">
+              {inactiveWidgets.length === 0 ? (
+                <div className="text-sm text-muted-foreground p-4 text-center border border-dashed rounded-lg bg-muted/10">
+                  {t("noHidden")}
                 </div>
-              </div>
-            </TabsContent>
-          </Tabs>
+              ) : (
+                inactiveWidgets.map((widget) => (
+                  <div
+                    key={widget.id}
+                    className="flex items-center justify-between p-3 bg-muted/20 border border-dashed rounded-lg"
+                  >
+                    <div className="flex items-center space-x-3 opacity-70">
+                      <span className="text-sm font-medium pl-1">
+                        {widget.title}
+                      </span>
+                    </div>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="h-7 w-7 text-muted-foreground hover:text-primary shrink-0 transition-colors"
+                      onClick={() =>
+                        toggleWidgetVisibility(widget.id, breakpointStr)
+                      }
+                      title={t("showWidget")}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         </div>
       </SheetContent>
     </Sheet>
